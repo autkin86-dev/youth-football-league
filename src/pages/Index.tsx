@@ -1,15 +1,37 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import SiteHeader from '@/components/SiteHeader';
+import HeroBoard from '@/components/HeroBoard';
+import StandingsSection from '@/components/StandingsSection';
+import ScheduleSection from '@/components/ScheduleSection';
+import ResultsSection from '@/components/ResultsSection';
+import TeamsSection from '@/components/TeamsSection';
+import PlayersSection from '@/components/PlayersSection';
+import SiteFooter from '@/components/SiteFooter';
+import MatchProtocolDialog from '@/components/MatchProtocolDialog';
+import DeclareTeamDialog from '@/components/DeclareTeamDialog';
+import type { Match } from '@/data/league';
 
 const Index = () => {
+  const [protocol, setProtocol] = useState<Match | null>(null);
+  const [declare, setDeclare] = useState(false);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 color-black text-black">Добро пожаловать!</h1>
-        <p className="text-xl text-gray-600">тут будет отображаться ваш проект</p>
+    <div className="screen-vignette min-h-screen">
+      <div className="mx-auto w-full max-w-[1440px] px-5 md:px-8">
+        <SiteHeader onDeclare={() => setDeclare(true)} />
+        <main>
+          <HeroBoard onOpenProtocol={setProtocol} />
+          <StandingsSection />
+          <ScheduleSection />
+          <ResultsSection onOpenProtocol={setProtocol} />
+          <TeamsSection />
+          <PlayersSection />
+        </main>
+        <SiteFooter />
       </div>
-      <span className="absolute bottom-8 left-1/2 -translate-x-1/2 inline-block bg-[#FF6637] text-white text-sm px-4 py-2 rounded-full whitespace-nowrap">
-        Подождите 5 минут, Юра создает первую версию проекта с нуля
-      </span>
+
+      <MatchProtocolDialog match={protocol} onOpenChange={(o) => !o && setProtocol(null)} />
+      <DeclareTeamDialog open={declare} onOpenChange={setDeclare} />
     </div>
   );
 };
