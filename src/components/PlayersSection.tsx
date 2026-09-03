@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { ALL_PLAYERS } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 type SortKey = 'goals' | 'assists' | 'yellow';
 
@@ -15,14 +15,15 @@ const SORTS: { id: SortKey; label: string }[] = [
 const PlayersSection = () => {
   const [sort, setSort] = useState<SortKey>('goals');
   const [query, setQuery] = useState('');
+  const { players: source } = useLeague();
 
   const players = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...ALL_PLAYERS]
+    return [...source]
       .filter((p) => !q || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))
       .sort((a, b) => b[sort] - a[sort] || b.goals - a.goals)
       .slice(0, 12);
-  }, [sort, query]);
+  }, [sort, query, source]);
 
   const top = players[0];
 

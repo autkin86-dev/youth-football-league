@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Получение данных первенства",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Неверный пароль",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"password": "wrong-password-000"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "Сохранение без токена запрещено",
+      "method": "POST",
+      "path": "/?action=save_match",
+      "body": {"id": 1, "home_goals": 1, "away_goals": 1},
+      "expectedStatus": 403
+    }
+  ]
+}

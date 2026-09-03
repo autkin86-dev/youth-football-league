@@ -1,12 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { SCHEDULE } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 const ScheduleSection = () => {
-  const rounds = useMemo(() => Array.from(new Set(SCHEDULE.map((m) => m.round))), []);
-  const [round, setRound] = useState(rounds[0]);
-  const matches = SCHEDULE.filter((m) => m.round === round);
+  const { schedule } = useLeague();
+  const rounds = useMemo(
+    () => Array.from(new Set(schedule.map((m) => m.round))).sort((a, b) => a - b),
+    [schedule],
+  );
+  const [round, setRound] = useState<number | null>(null);
+  useEffect(() => {
+    if (round === null && rounds.length) setRound(rounds[0]);
+  }, [rounds, round]);
+  const matches = schedule.filter((m) => m.round === (round ?? rounds[0]));
 
   return (
     <section id="raspisanie" className="scroll-mt-24 py-14">
@@ -24,7 +31,7 @@ const ScheduleSection = () => {
               onClick={() => setRound(r)}
               className={cn(
                 'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                round === r
+                (round ?? rounds[0]) === r
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary text-muted-foreground hover:text-foreground',
               )}

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { AGE_GROUPS, STANDINGS, goalDiff, type AgeGroup } from '@/data/league';
+import { AGE_GROUPS, goalDiff, type AgeGroup } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 const FORM_STYLE = {
   W: 'bg-win/20 text-win',
@@ -11,7 +12,8 @@ const FORM_STYLE = {
 
 const StandingsSection = () => {
   const [group, setGroup] = useState<AgeGroup>('2013');
-  const rows = STANDINGS[group];
+  const { standings } = useLeague();
+  const rows = standings[group] ?? [];
 
   return (
     <section id="tablo" className="scroll-mt-24 py-14">

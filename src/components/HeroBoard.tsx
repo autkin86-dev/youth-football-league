@@ -1,14 +1,27 @@
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { NEXT_MATCH, RESULTS, STANDINGS, goalDiff, type Match } from '@/data/league';
+import { goalDiff, type Match } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 interface Props {
   onOpenProtocol: (m: Match) => void;
 }
 
 const HeroBoard = ({ onOpenProtocol }: Props) => {
-  const round6 = RESULTS.filter((m) => m.round === 6);
-  const table = STANDINGS['2013'];
+  const { results, standings, nextMatch, lastRound } = useLeague();
+  const round6 = results.filter((m) => m.round === lastRound).slice(0, 4);
+  const table = standings['2013'] ?? [];
+  const NEXT_MATCH = nextMatch;
+
+  if (!NEXT_MATCH) return null;
+
+  const topScorer = round6
+    .flatMap((m) => m.goals ?? [])
+    .reduce<Record<string, number>>((acc, g) => {
+      acc[g.player] = (acc[g.player] ?? 0) + 1;
+      return acc;
+    }, {});
+  const [bestName, bestGoals] = Object.entries(topScorer).sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
 
   return (
     <section className="grid gap-[18px] py-[18px] lg:grid-cols-[1fr_1fr_352px] lg:grid-rows-[minmax(320px,1fr)_214px]">
@@ -59,7 +72,7 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
         <div className="mt-auto flex items-center justify-between border-t border-border pt-3.5 text-[0.82rem] text-muted-foreground">
           <span>Бомбардир тура</span>
           <span>
-            <b className="font-semibold text-foreground">Орлов</b> · 3 мяча
+            <b className="font-semibold text-foreground">{bestName}</b> · {bestGoals} мяча
           </span>
         </div>
       </aside>
@@ -67,8 +80,8 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
       {/* Результаты тура */}
       <section className="flex flex-col lg:col-span-2">
         <div className="flex items-baseline justify-between px-0.5 pb-3">
-          <span className="eyebrow">Результаты 6 тура</span>
-          <span className="text-[0.82rem] text-muted-foreground">31 августа</span>
+          <span className="eyebrow">Результаты {lastRound} тура</span>
+          <span className="text-[0.82rem] text-muted-foreground">{round6[0]?.date ?? ''}</span>
         </div>
         <div className="grid flex-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           {round6.map((m) => {

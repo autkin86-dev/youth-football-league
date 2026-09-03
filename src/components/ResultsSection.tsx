@@ -1,19 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { RESULTS, type Match } from '@/data/league';
+import { type Match } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 interface Props {
   onOpenProtocol: (m: Match) => void;
 }
 
 const ResultsSection = ({ onOpenProtocol }: Props) => {
+  const { results } = useLeague();
   const rounds = useMemo(
-    () => Array.from(new Set(RESULTS.map((m) => m.round))).sort((a, b) => b - a),
-    [],
+    () => Array.from(new Set(results.map((m) => m.round))).sort((a, b) => b - a),
+    [results],
   );
-  const [round, setRound] = useState(rounds[0]);
-  const matches = RESULTS.filter((m) => m.round === round);
+  const [round, setRound] = useState<number | null>(null);
+  useEffect(() => {
+    if (round === null && rounds.length) setRound(rounds[0]);
+  }, [rounds, round]);
+  const matches = results.filter((m) => m.round === (round ?? rounds[0]));
 
   return (
     <section id="rezultaty" className="scroll-mt-24 py-14">
@@ -34,7 +39,7 @@ const ResultsSection = ({ onOpenProtocol }: Props) => {
               onClick={() => setRound(r)}
               className={cn(
                 'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                round === r
+                (round ?? rounds[0]) === r
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary text-muted-foreground hover:text-foreground',
               )}
