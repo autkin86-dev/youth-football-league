@@ -71,10 +71,16 @@ const SiteFooter = () => (
 
     <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-[0.78rem] text-muted-foreground">
       <p>© 2025—2026 Первенство САО по футболу · ГБУ «Мосгорспорт»</p>
-      <a href="/admin" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
-        <Icon name="Lock" size={12} />
-        Вход для судей
-      </a>
+      <span className="flex items-center gap-4">
+        <a href="/coach" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
+          <Icon name="Users" size={12} />
+          Кабинет тренера
+        </a>
+        <a href="/admin" className="flex items-center gap-1.5 transition-colors hover:text-foreground">
+          <Icon name="Lock" size={12} />
+          Вход для судей
+        </a>
+      </span>
     </div>
   </footer>
 );

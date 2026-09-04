@@ -21,6 +21,20 @@
       "expectedStatus": 400
     },
     {
+      "name": "Вход тренера с неверными данными",
+      "method": "POST",
+      "path": "/?action=coach_login",
+      "body": {"login": "nobody", "password": "wrong-000"},
+      "expectedStatus": 401
+    },
+    {
+      "name": "Создание тренера без прав админа",
+      "method": "POST",
+      "path": "/?action=save_coach",
+      "body": {"login": "hacker", "team": "Тест", "password": "1234"},
+      "expectedStatus": 403
+    },
+    {
       "name": "Список заявок без токена запрещён",
       "method": "GET",
       "path": "/?action=applications",

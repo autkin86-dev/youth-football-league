@@ -118,6 +118,64 @@ export const removeTeam = async (token: string, id: number): Promise<LeagueData>
   return data;
 };
 
+export interface CoachAccount {
+  id: number;
+  login: string;
+  team: string;
+  coach_name: string;
+}
+
+export interface CoachSession {
+  token: string;
+  team: string;
+  coach_name: string;
+}
+
+export const coachLogin = async (login: string, password: string): Promise<CoachSession> => {
+  const res = await fetch(`${LEAGUE_API}?action=coach_login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ login, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка входа');
+  return data as CoachSession;
+};
+
+export const fetchCoaches = async (token: string): Promise<CoachAccount[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=applications`, {
+    headers: { 'X-Auth-Token': token },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить');
+  return (data.coaches ?? []) as CoachAccount[];
+};
+
+export const saveCoach = async (
+  token: string,
+  payload: { id?: number; login: string; team: string; coach_name?: string; password?: string },
+): Promise<CoachAccount[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=save_coach`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось сохранить');
+  return data.coaches as CoachAccount[];
+};
+
+export const removeCoach = async (token: string, id: number): Promise<CoachAccount[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=remove_coach`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось удалить');
+  return data.coaches as CoachAccount[];
+};
+
 export const savePlayer = async (
   token: string,
   payload: { id?: number; team: string; age_group?: string; name: string; number: number; position: string },

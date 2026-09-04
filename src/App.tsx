@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Team from "./pages/Team";
+import Coach from "./pages/Coach";
 import NotFound from "./pages/NotFound";
 import { LeagueProvider } from "@/context/LeagueContext";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/team/:slug" element={<Team />} />
+            <Route path="/coach" element={<Coach />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -7,6 +7,7 @@ import NewMatchForm from '@/components/admin/NewMatchForm';
 import ApplicationsList from '@/components/admin/ApplicationsList';
 import SquadEditor from '@/components/admin/SquadEditor';
 import TeamsEditor from '@/components/admin/TeamsEditor';
+import CoachAccounts from '@/components/admin/CoachAccounts';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
 import { downloadProtocolDoc } from '@/lib/protocol-doc';
@@ -232,6 +233,8 @@ const Admin = () => {
             <TeamsEditor token={token} />
 
             <SquadEditor token={token} />
+
+            <CoachAccounts token={token} />
 
             <ApplicationsList token={token} />
           </>

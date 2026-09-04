@@ -28,6 +28,25 @@ def is_admin(event) -> bool:
     return bool(real) and got == token_for(real)
 
 
+def coach_token(login: str, password: str) -> str:
+    return hashlib.sha256(f'sao-coach:{login}:{password}'.encode()).hexdigest()
+
+
+def get_token(event) -> str:
+    headers = event.get('headers') or {}
+    return headers.get('X-Auth-Token') or headers.get('x-auth-token') or ''
+
+
+def coach_by_token(cur, event):
+    """Возвращает аккаунт тренера по токену или None."""
+    got = get_token(event)
+    if not got:
+        return None
+    cur.execute(f"SELECT * FROM coach_accounts WHERE password_hash='{esc(got)}' AND active = TRUE")
+    row = cur.fetchone()
+    return dict(row) if row else None
+
+
 def conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
 
@@ -180,11 +199,13 @@ def handler(event: dict, context) -> dict:
                 cur.close()
                 c.close()
                 return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
+            cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+            coaches = [dict(r) for r in cur.fetchall()]
             cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
             rows = [dict(r) for r in cur.fetchall()]
             cur.close()
             c.close()
-            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows}, ensure_ascii=False, default=str)}
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows, 'coaches': coaches}, ensure_ascii=False, default=str)}
         data = load_all(cur)
         cur.close()
         c.close()
@@ -217,11 +238,117 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'token': token_for(real)})}
         return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Неверный пароль'}, ensure_ascii=False)}
 
+    if action == 'coach_login':
+        login = str(body.get('login', '')).strip().lower()
+        pwd = str(body.get('password', ''))
+        c = conn()
+        cur = c.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            f"SELECT * FROM coach_accounts WHERE login='{esc(login)}' "
+            f"AND password_hash='{esc(coach_token(login, pwd))}' AND active = TRUE"
+        )
+        row = cur.fetchone()
+        cur.close()
+        c.close()
+        if not row:
+            return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Неверный логин или пароль'}, ensure_ascii=False)}
+        acc = dict(row)
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({
+            'token': acc['password_hash'], 'team': acc['team'], 'coach_name': acc['coach_name'],
+        }, ensure_ascii=False)}
+
+    # Тренер может менять только состав своей команды
+    if action in ('save_player', 'remove_player') and not is_admin(event):
+        c = conn()
+        cur = c.cursor(cursor_factory=RealDictCursor)
+        acc = coach_by_token(cur, event)
+        if not acc:
+            cur.close()
+            c.close()
+            return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход'}, ensure_ascii=False)}
+
+        if action == 'remove_player':
+            cur.execute(f"SELECT team FROM squad_players WHERE id={int(body.get('id'))}")
+            target = cur.fetchone()
+            if not target or target['team'] != acc['team']:
+                cur.close()
+                c.close()
+                return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
+            cur.execute(f"UPDATE squad_players SET active = FALSE WHERE id={int(body.get('id'))}")
+        else:
+            name = str(body.get('name', '')).strip()
+            if len(name) < 2:
+                cur.close()
+                c.close()
+                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите имя игрока'}, ensure_ascii=False)}
+            pid = body.get('id')
+            if pid:
+                cur.execute(f"SELECT team FROM squad_players WHERE id={int(pid)}")
+                target = cur.fetchone()
+                if not target or target['team'] != acc['team']:
+                    cur.close()
+                    c.close()
+                    return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
+                cur.execute(
+                    f"UPDATE squad_players SET name='{esc(name)}', number={int(body.get('number') or 0)}, "
+                    f"position='{esc(body.get('position', 'Полузащитник'))}' WHERE id={int(pid)}"
+                )
+            else:
+                cur.execute(
+                    "INSERT INTO squad_players (team, age_group, name, number, position) VALUES "
+                    f"('{esc(acc['team'])}', '{esc(body.get('age_group', '2013'))}', '{esc(name)}', "
+                    f"{int(body.get('number') or 0)}, '{esc(body.get('position', 'Полузащитник'))}')"
+                )
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
+
     if not is_admin(event):
         return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
 
     c = conn()
     cur = c.cursor(cursor_factory=RealDictCursor)
+
+    if action == 'save_coach':
+        login = str(body.get('login', '')).strip().lower()
+        pwd = str(body.get('password', ''))
+        team = str(body.get('team', '')).strip()
+        if len(login) < 3 or len(team) < 2:
+            cur.close()
+            c.close()
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите логин и команду'}, ensure_ascii=False)}
+        cid = body.get('id')
+        if cid:
+            sets = f"login='{esc(login)}', team='{esc(team)}', coach_name='{esc(body.get('coach_name', ''))}'"
+            if pwd:
+                sets += f", password_hash='{esc(coach_token(login, pwd))}'"
+            cur.execute(f'UPDATE coach_accounts SET {sets} WHERE id={int(cid)}')
+        else:
+            if len(pwd) < 4:
+                cur.close()
+                c.close()
+                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Пароль минимум 4 символа'}, ensure_ascii=False)}
+            cur.execute(
+                "INSERT INTO coach_accounts (login, team, coach_name, password_hash) VALUES "
+                f"('{esc(login)}', '{esc(team)}', '{esc(body.get('coach_name', ''))}', '{esc(coach_token(login, pwd))}')"
+            )
+        c.commit()
+        cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'coaches': rows}, ensure_ascii=False, default=str)}
+
+    if action == 'remove_coach':
+        cur.execute(f"UPDATE coach_accounts SET active = FALSE WHERE id={int(body.get('id'))}")
+        c.commit()
+        cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'coaches': rows}, ensure_ascii=False, default=str)}
 
     if action == 'application_status':
         status = str(body.get('status', 'new'))
