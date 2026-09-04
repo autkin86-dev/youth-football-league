@@ -151,9 +151,13 @@ def load_all(cur):
         sp['red'] = stat['red'] if stat else 0
         sp['games'] = games_by_team.get(sp['team'], 0)
 
+    cur.execute('SELECT * FROM teams WHERE active = TRUE ORDER BY age_group, name')
+    teams = [dict(r) for r in cur.fetchall()]
+
     return {
         'matches': matches,
         'standings': table,
+        'teams': teams,
         'squad': squad,
         'players': sorted(players.values(), key=lambda p: (-p['goals'], -p['assists'], p['name'])),
     }
@@ -232,6 +236,48 @@ def handler(event: dict, context) -> dict:
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows}, ensure_ascii=False, default=str)}
+
+    if action == 'save_team':
+        tid = body.get('id')
+        tname = str(body.get('name', '')).strip()
+        if len(tname) < 2:
+            cur.close()
+            c.close()
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите название команды'}, ensure_ascii=False)}
+        fields = (
+            f"name='{esc(tname)}', district='{esc(body.get('district', ''))}', coach='{esc(body.get('coach', ''))}', "
+            f"founded={int(body.get('founded') or 0)}, home='{esc(body.get('home', ''))}', "
+            f"color='{esc(body.get('color', ''))}', age_group='{esc(body.get('age_group', '2013'))}'"
+        )
+        if tid:
+            cur.execute(f'SELECT name FROM teams WHERE id={int(tid)}')
+            row = cur.fetchone()
+            old_name = row['name'] if row else ''
+            cur.execute(f'UPDATE teams SET {fields} WHERE id={int(tid)}')
+            if old_name and old_name != tname:
+                cur.execute(f"UPDATE squad_players SET team='{esc(tname)}' WHERE team='{esc(old_name)}'")
+                cur.execute(f"UPDATE matches SET home_team='{esc(tname)}' WHERE home_team='{esc(old_name)}'")
+                cur.execute(f"UPDATE matches SET away_team='{esc(tname)}' WHERE away_team='{esc(old_name)}'")
+        else:
+            cur.execute(
+                "INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES "
+                f"('{esc(tname)}', '{esc(body.get('district', ''))}', '{esc(body.get('coach', ''))}', "
+                f"{int(body.get('founded') or 0)}, '{esc(body.get('home', ''))}', '{esc(body.get('color', ''))}', "
+                f"'{esc(body.get('age_group', '2013'))}')"
+            )
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
+
+    if action == 'remove_team':
+        cur.execute(f"UPDATE teams SET active = FALSE WHERE id={int(body.get('id'))}")
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
 
     if action == 'save_player':
         pid = body.get('id')

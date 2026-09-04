@@ -1,15 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { SQUADS, TEAMS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
 const TeamsSection = () => {
-  const [active, setActive] = useState(TEAMS[0].name);
-  const team = TEAMS.find((t) => t.name === active)!;
-  const { squad: allSquad } = useLeague();
+  const { squad: allSquad, teams: apiTeams } = useLeague();
+  const teams = useMemo(
+    () =>
+      apiTeams.length
+        ? apiTeams.map((t) => ({
+            name: t.name,
+            district: t.district,
+            coach: t.coach,
+            founded: t.founded,
+            home: t.home,
+            color: t.color,
+          }))
+        : TEAMS,
+    [apiTeams],
+  );
+
+  const [active, setActive] = useState(teams[0]?.name ?? '');
+  useEffect(() => {
+    if (teams.length && !teams.some((t) => t.name === active)) setActive(teams[0].name);
+  }, [teams, active]);
+
+  const team = teams.find((t) => t.name === active) ?? teams[0];
   const live = allSquad.filter((p) => p.team === active);
   const squad = live.length ? live : (SQUADS[active] ?? []);
+
+  if (!team) return null;
 
   return (
     <section id="komandy" className="scroll-mt-24 py-14">
@@ -22,7 +43,7 @@ const TeamsSection = () => {
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
-          {TEAMS.map((t) => (
+          {teams.map((t) => (
             <button
               key={t.name}
               onClick={() => setActive(t.name)}

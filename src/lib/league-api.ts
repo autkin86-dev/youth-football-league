@@ -74,12 +74,49 @@ export interface SquadPlayer {
   red: number;
 }
 
+export interface ApiTeam {
+  id: number;
+  name: string;
+  district: string;
+  coach: string;
+  founded: number;
+  home: string;
+  color: string;
+  age_group: string;
+}
+
 export interface LeagueData {
   matches: ApiMatch[];
   standings: Record<string, ApiRow[]>;
   players: ApiPlayer[];
   squad: SquadPlayer[];
+  teams: ApiTeam[];
 }
+
+export const saveTeam = async (
+  token: string,
+  payload: Omit<ApiTeam, 'id'> & { id?: number },
+): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=save_team`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось сохранить команду');
+  return data;
+};
+
+export const removeTeam = async (token: string, id: number): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=remove_team`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось удалить команду');
+  return data;
+};
 
 export const savePlayer = async (
   token: string,

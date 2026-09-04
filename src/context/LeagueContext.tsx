@@ -9,6 +9,7 @@ import {
   type ApiMatch,
   type LeagueData,
   type SquadPlayer,
+  type ApiTeam,
 } from '@/lib/league-api';
 
 interface LeagueState {
@@ -20,6 +21,7 @@ interface LeagueState {
   standings: Record<string, TeamRow[]>;
   players: Player[];
   squad: SquadPlayer[];
+  teams: ApiTeam[];
   nextMatch: Match | null;
   lastRound: number;
   applyData: (data: LeagueData) => void;
@@ -60,6 +62,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
         standings: STANDINGS as Record<string, TeamRow[]>,
         players: ALL_PLAYERS,
         squad: [],
+        teams: [],
         nextMatch: SCHEDULE[0] ?? null,
         lastRound: RESULTS[0]?.round ?? 0,
         applyData: setData,
@@ -89,6 +92,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
       standings,
       players: toPlayers(data.players, data.matches),
       squad: data.squad ?? [],
+      teams: data.teams ?? [],
       nextMatch: schedule[0] ?? null,
       lastRound: results[0]?.round ?? 0,
       applyData: setData,

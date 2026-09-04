@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS, TEAMS, type AgeGroup } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 import { saveMatch, type LeagueData } from '@/lib/league-api';
 
 interface Props {
@@ -14,9 +15,8 @@ interface Props {
   onClose: () => void;
 }
 
-const VENUES = Array.from(new Set(TEAMS.map((t) => t.home)));
-
 const NewMatchForm = ({ token, knownTeams, suggestedRound, onSaved, onClose }: Props) => {
+  const { teams: apiTeams } = useLeague();
   const [round, setRound] = useState(String(suggestedRound));
   const [group, setGroup] = useState<AgeGroup>('2013');
   const [date, setDate] = useState('');
@@ -29,9 +29,19 @@ const NewMatchForm = ({ token, knownTeams, suggestedRound, onSaved, onClose }: P
 
   const teams = useMemo(() => {
     const fromData = knownTeams.filter(Boolean);
-    const fromGroup = TEAMS.filter((t) => t.group === group).map((t) => t.name);
+    const fromGroup = apiTeams.length
+      ? apiTeams.filter((t) => t.age_group === group).map((t) => t.name)
+      : TEAMS.filter((t) => t.group === group).map((t) => t.name);
     return Array.from(new Set([...fromGroup, ...fromData])).sort((a, b) => a.localeCompare(b, 'ru'));
-  }, [knownTeams, group]);
+  }, [knownTeams, group, apiTeams]);
+
+  const VENUES = useMemo(
+    () =>
+      Array.from(
+        new Set([...(apiTeams.length ? apiTeams : TEAMS).map((t) => t.home).filter(Boolean)]),
+      ),
+    [apiTeams],
+  );
 
   const submit = async () => {
     setError('');
