@@ -3,12 +3,14 @@ import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import AdminLogin from '@/components/admin/AdminLogin';
 import MatchEditor from '@/components/admin/MatchEditor';
+import NewMatchForm from '@/components/admin/NewMatchForm';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
 
 const Admin = () => {
   const [token, setToken] = useState<string | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<'all' | 'played' | 'upcoming'>('all');
   const { raw, standings, players, applyData, loading } = useLeague();
 
@@ -76,7 +78,18 @@ const Admin = () => {
           ))}
         </section>
 
-        {current ? (
+        {creating ? (
+          <NewMatchForm
+            token={token}
+            knownTeams={Array.from(new Set(raw.flatMap((m) => [m.home_team, m.away_team])))}
+            suggestedRound={Math.max(1, ...raw.map((m) => m.round)) + (raw.some((m) => !m.played) ? 0 : 1)}
+            onSaved={(data) => {
+              applyData(data);
+              setCreating(false);
+            }}
+            onClose={() => setCreating(false)}
+          />
+        ) : current ? (
           <MatchEditor
             match={current as ApiMatch}
             token={token}
@@ -90,7 +103,14 @@ const Admin = () => {
           <>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <h2 className="font-head text-[1.5rem] font-bold tracking-[-0.03em]">Матчи</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setCreating(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-[0.85rem] font-semibold text-accent-foreground transition-transform hover:scale-[1.03]"
+                >
+                  <Icon name="Plus" size={14} />
+                  Новый матч
+                </button>
                 {[
                   { id: 'all' as const, label: 'Все' },
                   { id: 'upcoming' as const, label: 'Предстоящие' },
