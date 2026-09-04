@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
+import { teamSlug } from '@/pages/Team';
 import { cn } from '@/lib/utils';
 import { SQUADS, TEAMS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
@@ -78,13 +80,20 @@ const TeamsSection = () => {
                 Тренер: {team.coach} · основана в {team.founded}
               </p>
             </div>
-            <div className="flex flex-col gap-1 text-[0.8rem] text-muted-foreground sm:text-right">
-              <span className="flex items-center gap-1.5 sm:justify-end">
+            <div className="flex flex-col gap-1 text-[0.8rem] text-muted-foreground sm:items-end">
+              <span className="flex items-center gap-1.5">
                 <Icon name="MapPin" size={13} /> {team.home}
               </span>
-              <span className="flex items-center gap-1.5 sm:justify-end">
+              <span className="flex items-center gap-1.5">
                 <Icon name="Shirt" size={13} /> {team.color}
               </span>
+              <Link
+                to={`/team/${teamSlug(team.name)}`}
+                className="mt-1 flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[0.78rem] font-semibold text-foreground transition-colors hover:bg-secondary/70"
+              >
+                Страница команды
+                <Icon name="ArrowRight" size={13} />
+              </Link>
             </div>
           </div>
 

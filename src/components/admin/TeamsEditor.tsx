@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { AGE_GROUPS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import { removeTeam, saveTeam, type ApiTeam } from '@/lib/league-api';
+import { teamSlug } from '@/pages/Team';
 
 interface Props {
   token: string;
@@ -28,6 +29,13 @@ const TeamsEditor = ({ token }: Props) => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState<number | null>(null);
+
+  const copyLink = (t: ApiTeam) => {
+    navigator.clipboard?.writeText(`${window.location.origin}/team/${teamSlug(t.name)}`);
+    setCopied(t.id);
+    setTimeout(() => setCopied(null), 1800);
+  };
 
   const set = (k: keyof typeof empty, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -209,7 +217,14 @@ const TeamsEditor = ({ token }: Props) => {
                 )}
               </div>
             </div>
-            <div className="flex gap-1.5 sm:justify-end">
+            <div className="flex flex-wrap gap-1.5 sm:justify-end">
+              <button
+                onClick={() => copyLink(t)}
+                className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.82rem] font-semibold transition-colors hover:bg-secondary/70"
+              >
+                <Icon name={copied === t.id ? 'Check' : 'Link'} size={14} />
+                {copied === t.id ? 'Скопировано' : 'Ссылка тренеру'}
+              </button>
               <button
                 onClick={() => startEdit(t)}
                 className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.82rem] font-semibold transition-colors hover:bg-secondary/70"

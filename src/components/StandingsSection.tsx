@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
+import { teamSlug } from '@/pages/Team';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS, goalDiff, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
@@ -74,7 +76,11 @@ const StandingsSection = () => {
                     {r.pos}
                   </span>
                 </td>
-                <td className={cn('px-2 py-3 font-medium', r.pos === 1 && 'font-bold')}>{r.team}</td>
+                <td className={cn('px-2 py-3 font-medium', r.pos === 1 && 'font-bold')}>
+                  <Link to={`/team/${teamSlug(r.team)}`} className="story-link hover:text-foreground">
+                    {r.team}
+                  </Link>
+                </td>
                 <td className="tabnum px-2 py-3 text-right text-muted-foreground">{r.played}</td>
                 <td className="tabnum px-2 py-3 text-right text-muted-foreground">{r.win}</td>
                 <td className="tabnum px-2 py-3 text-right text-muted-foreground">{r.draw}</td>
