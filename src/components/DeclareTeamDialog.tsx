@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { AGE_GROUPS } from '@/data/league';
 import { cn } from '@/lib/utils';
+import { sendApplication } from '@/lib/league-api';
 
 interface Props {
   open: boolean;
@@ -30,21 +31,46 @@ const DeclareTeamDialog = ({ open, onOpenChange }: Props) => {
   const [group, setGroup] = useState(AGE_GROUPS[2].id);
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [serverError, setServerError] = useState('');
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerError('');
     const next: Errors = {};
     if (team.trim().length < 2) next.team = 'Укажите название команды';
     if (coach.trim().length < 3) next.coach = 'Укажите ФИО тренера';
     if (phone.replace(/\D/g, '').length < 10) next.phone = 'Телефон в формате +7 999 000-00-00';
     setErrors(next);
     if (Object.keys(next).length) return;
-    setSent(true);
+
+    setSending(true);
+    try {
+      await sendApplication({
+        team_name: team.trim(),
+        coach: coach.trim(),
+        phone: phone.trim(),
+        age_group: group,
+      });
+      setSent(true);
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : 'Не удалось отправить заявку');
+    } finally {
+      setSending(false);
+    }
   };
 
   const close = (v: boolean) => {
     onOpenChange(v);
-    if (!v) setTimeout(() => setSent(false), 200);
+    if (!v)
+      setTimeout(() => {
+        setSent(false);
+        setTeam('');
+        setCoach('');
+        setPhone('');
+        setErrors({});
+        setServerError('');
+      }, 200);
   };
 
   return (
@@ -131,8 +157,10 @@ const DeclareTeamDialog = ({ open, onOpenChange }: Props) => {
                 {errors.phone && <p className="mt-1.5 text-[0.78rem] text-accent">{errors.phone}</p>}
               </div>
 
-              <Button type="submit" className="w-full rounded-full">
-                Отправить заявку
+              {serverError && <p className="text-[0.8rem] text-accent">{serverError}</p>}
+
+              <Button type="submit" disabled={sending} className="w-full rounded-full">
+                {sending ? 'Отправляю…' : 'Отправить заявку'}
               </Button>
             </form>
           </>

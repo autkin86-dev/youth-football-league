@@ -168,6 +168,58 @@ export interface SaveMatchPayload {
   cards: { minute: number; player: string; side: 'home' | 'away'; color: 'yellow' | 'red' }[];
 }
 
+export interface Application {
+  id: number;
+  team_name: string;
+  coach: string;
+  phone: string;
+  age_group: string;
+  comment: string;
+  status: 'new' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+export const sendApplication = async (payload: {
+  team_name: string;
+  coach: string;
+  phone: string;
+  age_group: string;
+  comment?: string;
+}) => {
+  const res = await fetch(`${LEAGUE_API}?action=apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось отправить заявку');
+  return data;
+};
+
+export const fetchApplications = async (token: string): Promise<Application[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=applications`, {
+    headers: { 'X-Auth-Token': token },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить заявки');
+  return data.applications as Application[];
+};
+
+export const setApplicationStatus = async (
+  token: string,
+  id: number,
+  status: Application['status'],
+): Promise<Application[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=application_status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id, status }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось обновить статус');
+  return data.applications as Application[];
+};
+
 export const saveMatch = async (token: string, payload: SaveMatchPayload): Promise<LeagueData> => {
   const res = await fetch(`${LEAGUE_API}?action=save_match`, {
     method: 'POST',

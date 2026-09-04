@@ -14,6 +14,19 @@
       "expectedStatus": 401
     },
     {
+      "name": "Заявка с пустыми полями отклоняется",
+      "method": "POST",
+      "path": "/?action=apply",
+      "body": {"team_name": "", "coach": "", "phone": ""},
+      "expectedStatus": 400
+    },
+    {
+      "name": "Список заявок без токена запрещён",
+      "method": "GET",
+      "path": "/?action=applications",
+      "expectedStatus": 403
+    },
+    {
       "name": "Сохранение без токена запрещено",
       "method": "POST",
       "path": "/?action=save_match",

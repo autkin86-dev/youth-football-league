@@ -149,12 +149,41 @@ def handler(event: dict, context) -> dict:
     if method == 'GET':
         c = conn()
         cur = c.cursor(cursor_factory=RealDictCursor)
+        if action == 'applications':
+            if not is_admin(event):
+                cur.close()
+                c.close()
+                return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
+            cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
+            rows = [dict(r) for r in cur.fetchall()]
+            cur.close()
+            c.close()
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows}, ensure_ascii=False, default=str)}
         data = load_all(cur)
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps(data, ensure_ascii=False, default=str)}
 
     body = json.loads(event.get('body') or '{}')
+
+    if action == 'apply':
+        team = str(body.get('team_name', '')).strip()
+        coach = str(body.get('coach', '')).strip()
+        phone = str(body.get('phone', '')).strip()
+        if len(team) < 2 or len(coach) < 3 or len(''.join(ch for ch in phone if ch.isdigit())) < 10:
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Проверьте поля заявки'}, ensure_ascii=False)}
+        c = conn()
+        cur = c.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            "INSERT INTO team_applications (team_name, coach, phone, age_group, comment) VALUES "
+            f"('{esc(team)}', '{esc(coach)}', '{esc(phone)}', '{esc(body.get('age_group', '2013'))}', "
+            f"'{esc(str(body.get('comment', ''))[:500])}') RETURNING id"
+        )
+        new_id = cur.fetchone()['id']
+        c.commit()
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, 'id': new_id})}
 
     if action == 'login':
         real = os.environ.get('ADMIN_PASSWORD', '')
@@ -167,6 +196,20 @@ def handler(event: dict, context) -> dict:
 
     c = conn()
     cur = c.cursor(cursor_factory=RealDictCursor)
+
+    if action == 'application_status':
+        status = str(body.get('status', 'new'))
+        if status not in ('new', 'approved', 'rejected'):
+            status = 'new'
+        cur.execute(
+            f"UPDATE team_applications SET status='{esc(status)}' WHERE id={int(body.get('id'))}"
+        )
+        c.commit()
+        cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows}, ensure_ascii=False, default=str)}
 
     if action == 'save_match':
         mid = body.get('id')
