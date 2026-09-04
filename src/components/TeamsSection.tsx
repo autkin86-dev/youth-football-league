@@ -2,11 +2,14 @@ import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { SQUADS, TEAMS } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 const TeamsSection = () => {
   const [active, setActive] = useState(TEAMS[0].name);
   const team = TEAMS.find((t) => t.name === active)!;
-  const squad = SQUADS[active] ?? [];
+  const { squad: allSquad } = useLeague();
+  const live = allSquad.filter((p) => p.team === active);
+  const squad = live.length ? live : (SQUADS[active] ?? []);
 
   return (
     <section id="komandy" className="scroll-mt-24 py-14">

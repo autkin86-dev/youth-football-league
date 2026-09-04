@@ -60,11 +60,51 @@ export interface ApiRow {
   form: ('W' | 'D' | 'L')[];
 }
 
+export interface SquadPlayer {
+  id: number;
+  team: string;
+  age_group: string;
+  name: string;
+  number: number;
+  position: string;
+  games: number;
+  goals: number;
+  assists: number;
+  yellow: number;
+  red: number;
+}
+
 export interface LeagueData {
   matches: ApiMatch[];
   standings: Record<string, ApiRow[]>;
   players: ApiPlayer[];
+  squad: SquadPlayer[];
 }
+
+export const savePlayer = async (
+  token: string,
+  payload: { id?: number; team: string; age_group?: string; name: string; number: number; position: string },
+): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=save_player`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось сохранить игрока');
+  return data;
+};
+
+export const removePlayer = async (token: string, id: number): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=remove_player`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось удалить игрока');
+  return data;
+};
 
 export const toMatch = (m: ApiMatch): Match => ({
   id: String(m.id),

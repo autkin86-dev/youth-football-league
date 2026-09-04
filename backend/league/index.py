@@ -130,9 +130,31 @@ def load_all(cur):
             else:
                 p['yellow'] += 1
 
+    cur.execute('SELECT * FROM squad_players WHERE active = TRUE ORDER BY team, number')
+    squad = [dict(r) for r in cur.fetchall()]
+
+    def short_of(full: str) -> str:
+        parts = full.split()
+        return f"{parts[0]} {parts[1][0]}." if len(parts) > 1 else full
+
+    games_by_team = {}
+    for m in matches:
+        if m['played']:
+            for t in (m['home_team'], m['away_team']):
+                games_by_team[t] = games_by_team.get(t, 0) + 1
+
+    for sp in squad:
+        stat = players.get((sp['name'], sp['team'])) or players.get((short_of(sp['name']), sp['team']))
+        sp['goals'] = stat['goals'] if stat else 0
+        sp['assists'] = stat['assists'] if stat else 0
+        sp['yellow'] = stat['yellow'] if stat else 0
+        sp['red'] = stat['red'] if stat else 0
+        sp['games'] = games_by_team.get(sp['team'], 0)
+
     return {
         'matches': matches,
         'standings': table,
+        'squad': squad,
         'players': sorted(players.values(), key=lambda p: (-p['goals'], -p['assists'], p['name'])),
     }
 
@@ -210,6 +232,39 @@ def handler(event: dict, context) -> dict:
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows}, ensure_ascii=False, default=str)}
+
+    if action == 'save_player':
+        pid = body.get('id')
+        name = str(body.get('name', '')).strip()
+        if len(name) < 2:
+            cur.close()
+            c.close()
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите имя игрока'}, ensure_ascii=False)}
+        if pid:
+            cur.execute(
+                f"UPDATE squad_players SET name='{esc(name)}', number={int(body.get('number') or 0)}, "
+                f"position='{esc(body.get('position', 'Полузащитник'))}', team='{esc(body.get('team', ''))}' "
+                f"WHERE id={int(pid)}"
+            )
+        else:
+            cur.execute(
+                "INSERT INTO squad_players (team, age_group, name, number, position) VALUES "
+                f"('{esc(body.get('team', ''))}', '{esc(body.get('age_group', '2013'))}', '{esc(name)}', "
+                f"{int(body.get('number') or 0)}, '{esc(body.get('position', 'Полузащитник'))}')"
+            )
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
+
+    if action == 'remove_player':
+        cur.execute(f"UPDATE squad_players SET active = FALSE WHERE id={int(body.get('id'))}")
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
 
     if action == 'save_match':
         mid = body.get('id')

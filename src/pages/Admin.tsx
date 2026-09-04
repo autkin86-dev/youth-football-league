@@ -5,6 +5,7 @@ import AdminLogin from '@/components/admin/AdminLogin';
 import MatchEditor from '@/components/admin/MatchEditor';
 import NewMatchForm from '@/components/admin/NewMatchForm';
 import ApplicationsList from '@/components/admin/ApplicationsList';
+import SquadEditor from '@/components/admin/SquadEditor';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
 
@@ -206,6 +207,8 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+
+            <SquadEditor token={token} />
 
             <ApplicationsList token={token} />
           </>
