@@ -10,7 +10,7 @@ import TeamsEditor from '@/components/admin/TeamsEditor';
 import CoachAccounts from '@/components/admin/CoachAccounts';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
-import { downloadProtocolDoc } from '@/lib/protocol-doc';
+import { downloadProtocolDoc, downloadProtocolsDoc } from '@/lib/protocol-doc';
 
 const Admin = () => {
   const [token, setToken] = useState<string | null>(null);
@@ -110,13 +110,13 @@ const Admin = () => {
               <h2 className="font-head text-[1.5rem] font-bold tracking-[-0.03em]">Матчи</h2>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => matches.forEach((m, i) => setTimeout(() => downloadProtocolDoc(m, squad), i * 350))}
+                  onClick={() => downloadProtocolsDoc(matches, squad)}
                   disabled={!matches.length}
-                  title="Скачать бланки всех матчей из списка"
+                  title="Один файл Word со всеми бланками из списка, каждый на своей странице"
                   className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.85rem] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                 >
                   <Icon name="FileDown" size={14} />
-                  Все бланки
+                  Все бланки ({matches.length})
                 </button>
                 <button
                   onClick={() => setCreating(true)}

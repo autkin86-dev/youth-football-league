@@ -26,9 +26,13 @@ const squadTable = (title: string, players: SquadPlayer[]) => {
     )
     .join('');
   const extra = emptyRows(Math.max(4, 16 - players.length), 6);
+  const note = players.length
+    ? ''
+    : '<p style="font-size:9.5pt;margin:0 0 4pt">Состав не заполнен в системе — впишите игроков от руки.</p>';
 
   return `
   <p class="h2">${esc(title)}</p>
+  ${note}
   <table class="grid">
     <tr class="head">
       <th style="width:8%">№</th>
@@ -42,16 +46,7 @@ const squadTable = (title: string, players: SquadPlayer[]) => {
   </table>`;
 };
 
-export const buildProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) => {
-  const home = squad.filter((p) => p.team === match.home_team).sort((a, b) => a.number - b.number);
-  const away = squad.filter((p) => p.team === match.away_team).sort((a, b) => a.number - b.number);
-
-  const html = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
-<head>
-<meta charset="utf-8">
-<title>Протокол матча</title>
-<style>
+const DOC_STYLE = `
   @page { size: A4; margin: 1.6cm 1.4cm; }
   body { font-family: "Times New Roman", serif; font-size: 11pt; color: #000; }
   .title { font-size: 15pt; font-weight: bold; text-align: center; margin: 0 0 2pt; }
@@ -65,9 +60,26 @@ export const buildProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) => {
   .score { text-align: center; font-size: 13pt; font-weight: bold; margin: 10pt 0; }
   .sign td { padding-top: 22pt; font-size: 10pt; }
   .line { border-bottom: 1px solid #000; display: inline-block; width: 62%; }
-</style>
+  .pagebreak { page-break-before: always; }
+`;
+
+const wrapDoc = (title: string, body: string) => `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="utf-8">
+<title>${esc(title)}</title>
+<style>${DOC_STYLE}</style>
 </head>
 <body>
+${body}
+</body>
+</html>`;
+
+const protocolBody = (match: ApiMatch, squad: SquadPlayer[]) => {
+  const home = squad.filter((p) => p.team === match.home_team).sort((a, b) => a.number - b.number);
+  const away = squad.filter((p) => p.team === match.away_team).sort((a, b) => a.number - b.number);
+
+  return `
   <p class="title">ПРОТОКОЛ МАТЧА</p>
   <p class="sub">Первенство детско-юношеских команд по футболу САО г. Москвы · сезон 25/26</p>
 
@@ -123,23 +135,43 @@ export const buildProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) => {
     <tr>
       <td>Тренер «${esc(match.away_team)}»: <span class="line">&nbsp;</span></td>
     </tr>
-  </table>
-</body>
-</html>`;
-
-  return html;
+  </table>`;
 };
 
-export const downloadProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) => {
-  const html = buildProtocolDoc(match, squad);
+export const buildProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) =>
+  wrapDoc('Протокол матча', protocolBody(match, squad));
+
+export const buildProtocolsDoc = (matches: ApiMatch[], squad: SquadPlayer[]) =>
+  wrapDoc(
+    'Протоколы матчей',
+    matches
+      .map((m, i) => `<div${i ? ' class="pagebreak"' : ''}>${protocolBody(m, squad)}</div>`)
+      .join('\n'),
+  );
+
+const safe = (s: string) => s.replace(/[^\wа-яА-ЯёЁ-]+/gi, '_');
+
+const saveDoc = (html: string, filename: string) => {
   const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const safe = (s: string) => s.replace(/[^\wа-яА-ЯёЁ-]+/gi, '_');
   a.href = url;
-  a.download = `Протокол_${match.round}тур_${safe(match.home_team)}_${safe(match.away_team)}.doc`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+export const downloadProtocolDoc = (match: ApiMatch, squad: SquadPlayer[]) =>
+  saveDoc(
+    buildProtocolDoc(match, squad),
+    `Протокол_${match.round}тур_${safe(match.home_team)}_${safe(match.away_team)}.doc`,
+  );
+
+export const downloadProtocolsDoc = (matches: ApiMatch[], squad: SquadPlayer[]) => {
+  if (!matches.length) return;
+  const rounds = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
+  const label = rounds.length === 1 ? `${rounds[0]}тур` : `туры_${rounds[0]}-${rounds[rounds.length - 1]}`;
+  saveDoc(buildProtocolsDoc(matches, squad), `Протоколы_${label}_${matches.length}матчей.doc`);
 };
