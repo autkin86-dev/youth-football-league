@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { saveMatch, type ApiMatch, type LeagueData } from '@/lib/league-api';
+import { downloadProtocolDoc } from '@/lib/protocol-doc';
+import { useLeague } from '@/context/LeagueContext';
 
 interface GoalRow {
   minute: string;
@@ -28,6 +30,7 @@ interface Props {
 }
 
 const MatchEditor = ({ match, token, onSaved, onClose }: Props) => {
+  const { squad } = useLeague();
   const [homeGoals, setHomeGoals] = useState(match.home_goals?.toString() ?? '');
   const [awayGoals, setAwayGoals] = useState(match.away_goals?.toString() ?? '');
   const [referee, setReferee] = useState(match.referee ?? '');
@@ -318,6 +321,14 @@ const MatchEditor = ({ match, token, onSaved, onClose }: Props) => {
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={save} disabled={saving} className="rounded-full">
           {saving ? 'Сохраняю…' : 'Сохранить протокол'}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => downloadProtocolDoc(match, squad)}
+          className="rounded-full"
+        >
+          <Icon name="FileDown" size={15} className="mr-1.5" />
+          Бланк в Word
         </Button>
         <Button variant="secondary" onClick={onClose} className="rounded-full">
           Отмена

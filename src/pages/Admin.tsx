@@ -9,13 +9,14 @@ import SquadEditor from '@/components/admin/SquadEditor';
 import TeamsEditor from '@/components/admin/TeamsEditor';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
+import { downloadProtocolDoc } from '@/lib/protocol-doc';
 
 const Admin = () => {
   const [token, setToken] = useState<string | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<'all' | 'played' | 'upcoming'>('all');
-  const { raw, standings, players, applyData, loading } = useLeague();
+  const { raw, standings, players, squad, applyData, loading } = useLeague();
 
   useEffect(() => {
     setToken(localStorage.getItem('sao_admin_token'));
@@ -108,6 +109,15 @@ const Admin = () => {
               <h2 className="font-head text-[1.5rem] font-bold tracking-[-0.03em]">Матчи</h2>
               <div className="flex flex-wrap gap-2">
                 <button
+                  onClick={() => matches.forEach((m, i) => setTimeout(() => downloadProtocolDoc(m, squad), i * 350))}
+                  disabled={!matches.length}
+                  title="Скачать бланки всех матчей из списка"
+                  className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.85rem] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                >
+                  <Icon name="FileDown" size={14} />
+                  Все бланки
+                </button>
+                <button
                   onClick={() => setCreating(true)}
                   className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-[0.85rem] font-semibold text-accent-foreground transition-transform hover:scale-[1.03]"
                 >
@@ -156,13 +166,23 @@ const Admin = () => {
                     </span>
                     <span className="flex-1 font-medium">{m.away_team}</span>
                   </div>
-                  <button
-                    onClick={() => setEditing(m.id)}
-                    className="flex items-center gap-1.5 justify-self-start rounded-full bg-secondary px-4 py-2 text-[0.84rem] font-semibold transition-colors hover:bg-secondary/70 sm:justify-self-end"
-                  >
-                    <Icon name={m.played ? 'Pencil' : 'Plus'} size={14} />
-                    {m.played ? 'Изменить' : 'Внести результат'}
-                  </button>
+                  <div className="flex flex-wrap gap-1.5 justify-self-start sm:justify-self-end">
+                    <button
+                      onClick={() => downloadProtocolDoc(m, squad)}
+                      title="Скачать бланк протокола для заполнения ручкой"
+                      className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.84rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <Icon name="FileDown" size={14} />
+                      Бланк Word
+                    </button>
+                    <button
+                      onClick={() => setEditing(m.id)}
+                      className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.84rem] font-semibold transition-colors hover:bg-secondary/70"
+                    >
+                      <Icon name={m.played ? 'Pencil' : 'Plus'} size={14} />
+                      {m.played ? 'Изменить' : 'Внести результат'}
+                    </button>
+                  </div>
                 </li>
               ))}
               {!matches.length && (
