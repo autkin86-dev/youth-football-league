@@ -30,6 +30,8 @@ const Index = () => {
 
   const renderSection = () => {
     switch (section) {
+      case 'obshiy-zachet':
+        return <OverallStandingsSection />;
       case 'tablo':
         return <StandingsSection />;
       case 'raspisanie':

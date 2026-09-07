@@ -24,6 +24,7 @@ const SiteFooter = () => (
         <p className="eyebrow">Разделы</p>
         <ul className="mt-4 space-y-2 text-[0.88rem] text-muted-foreground">
           {[
+            ['obshiy-zachet', 'Общий зачёт'],
             ['tablo', 'Турнирная таблица'],
             ['raspisanie', 'Расписание'],
             ['rezultaty', 'Результаты и протоколы'],

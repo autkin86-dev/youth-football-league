@@ -4,6 +4,7 @@ import { SEASON } from '@/data/league';
 import { cn } from '@/lib/utils';
 
 export const SECTION_LINKS = [
+  { id: 'obshiy-zachet', label: 'Общий зачёт' },
   { id: 'tablo', label: 'Таблица' },
   { id: 'raspisanie', label: 'Расписание' },
   { id: 'rezultaty', label: 'Результаты' },
