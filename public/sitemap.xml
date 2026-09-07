@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://первенствосао.рф/</loc>
+    <loc>https://www.первенствосао.рф/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=obshiy-zachet</loc>
+    <loc>https://www.первенствосао.рф/?s=obshiy-zachet</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=tablo</loc>
+    <loc>https://www.первенствосао.рф/?s=tablo</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=raspisanie</loc>
+    <loc>https://www.первенствосао.рф/?s=raspisanie</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=rezultaty</loc>
+    <loc>https://www.первенствосао.рф/?s=rezultaty</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=komandy</loc>
+    <loc>https://www.первенствосао.рф/?s=komandy</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://первенствосао.рф/?s=igroki</loc>
+    <loc>https://www.первенствосао.рф/?s=igroki</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

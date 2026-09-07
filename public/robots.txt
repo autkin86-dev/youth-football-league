@@ -16,4 +16,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://первенствосао.рф/sitemap.xml
+Sitemap: https://www.первенствосао.рф/sitemap.xml
