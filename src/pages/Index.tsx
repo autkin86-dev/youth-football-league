@@ -68,7 +68,6 @@ const Index = () => {
             <>
               <HeroBoard onOpenProtocol={setProtocol} />
               <AboutSection />
-              <OverallStandingsSection />
             </>
           )}
         </main>

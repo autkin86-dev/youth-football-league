@@ -64,10 +64,9 @@ const SiteHeader = ({ onDeclare, activeSection, onSelectSection }: SiteHeaderPro
         <div className="flex items-center gap-2">
           <button
             onClick={onDeclare}
-            className="flex items-center gap-2.5 rounded-full bg-primary py-2 pl-4 pr-3 text-[0.92rem] font-semibold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-95"
+            className="hidden items-center gap-2.5 rounded-full bg-primary py-2 pl-4 pr-3 text-[0.92rem] font-semibold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-95 lg:flex"
           >
-            <span className="hidden sm:inline">Заявить команду</span>
-            <span className="sm:hidden">Заявка</span>
+            Заявить команду
             <span className="h-4 w-4 rounded-full bg-accent" aria-hidden="true" />
           </button>
           <button
@@ -82,6 +81,16 @@ const SiteHeader = ({ onDeclare, activeSection, onSelectSection }: SiteHeaderPro
 
       {open && (
         <nav className="animate-fade-in flex flex-col gap-1 border-t border-border py-3 lg:hidden">
+          <button
+            onClick={() => {
+              setOpen(false);
+              onDeclare();
+            }}
+            className="mb-1 flex items-center justify-between rounded-lg bg-primary px-2 py-2.5 text-left text-[0.95rem] font-semibold text-primary-foreground transition-colors"
+          >
+            Заявить команду
+            <span className="h-4 w-4 rounded-full bg-accent" aria-hidden="true" />
+          </button>
           {SECTION_LINKS.map((l) => (
             <button
               key={l.id}
