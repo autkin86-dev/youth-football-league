@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { SEASON } from '@/data/league';
 import { cn } from '@/lib/utils';
 
-const LINKS = [
+export const SECTION_LINKS = [
   { id: 'tablo', label: 'Таблица' },
   { id: 'raspisanie', label: 'Расписание' },
   { id: 'rezultaty', label: 'Результаты' },
@@ -13,40 +13,26 @@ const LINKS = [
 
 interface SiteHeaderProps {
   onDeclare: () => void;
+  activeSection: string | null;
+  onSelectSection: (id: string | null) => void;
 }
 
-const SiteHeader = ({ onDeclare }: SiteHeaderProps) => {
+const SiteHeader = ({ onDeclare, activeSection, onSelectSection }: SiteHeaderProps) => {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState('tablo');
 
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY + 160;
-      let current = LINKS[0].id;
-      LINKS.forEach((l) => {
-        const el = document.getElementById(l.id);
-        if (el && el.offsetTop <= y) current = l.id;
-      });
-      setActive(current);
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const go = (id: string) => {
+  const go = (id: string | null) => {
     setOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    onSelectSection(id);
   };
 
   return (
     <header className="sticky top-0 z-50 -mx-5 border-b border-border/60 bg-background/85 px-5 backdrop-blur-xl md:-mx-8 md:px-8">
       <div className="flex h-[72px] items-center justify-between gap-4">
         <a
-          href="#tablo"
+          href="/"
           onClick={(e) => {
             e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            go(null);
           }}
           className="flex shrink-0 items-center gap-2.5"
         >
@@ -60,13 +46,13 @@ const SiteHeader = ({ onDeclare }: SiteHeaderProps) => {
         </a>
 
         <nav className="hidden gap-[26px] text-[0.92rem] font-medium text-muted-foreground lg:flex">
-          {LINKS.map((l) => (
+          {SECTION_LINKS.map((l) => (
             <button
               key={l.id}
               onClick={() => go(l.id)}
               className={cn(
                 'transition-colors hover:text-foreground',
-                active === l.id && 'text-foreground',
+                activeSection === l.id && 'text-foreground',
               )}
             >
               {l.label}
@@ -95,11 +81,14 @@ const SiteHeader = ({ onDeclare }: SiteHeaderProps) => {
 
       {open && (
         <nav className="animate-fade-in flex flex-col gap-1 border-t border-border py-3 lg:hidden">
-          {LINKS.map((l) => (
+          {SECTION_LINKS.map((l) => (
             <button
               key={l.id}
               onClick={() => go(l.id)}
-              className="flex items-center justify-between rounded-lg px-2 py-2.5 text-left text-[0.95rem] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className={cn(
+                'flex items-center justify-between rounded-lg px-2 py-2.5 text-left text-[0.95rem] transition-colors hover:bg-secondary hover:text-foreground',
+                activeSection === l.id ? 'bg-secondary text-foreground' : 'text-muted-foreground',
+              )}
             >
               {l.label}
               <Icon name="ChevronRight" size={16} />

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { SEASON } from '@/data/league';
 
@@ -30,16 +31,12 @@ const SiteFooter = () => (
             ['igroki', 'Статистика игроков'],
           ].map(([id, label]) => (
             <li key={id}>
-              <a
-                href={`#${id}`}
+              <Link
+                to={`/?s=${id}`}
                 className="story-link transition-colors hover:text-foreground"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                }}
               >
                 {label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
