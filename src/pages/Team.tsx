@@ -141,7 +141,7 @@ const Team = () => {
           </div>
         </section>
 
-        <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
           {[
             { label: 'Место в таблице', value: row ? `${row.pos}` : '—' },
             { label: 'Очки', value: row?.points ?? 0 },
@@ -149,9 +149,9 @@ const Team = () => {
             { label: 'Мячи', value: row ? `${row.scored}–${row.missed}` : '—' },
             { label: 'Разница', value: row ? goalDiff(row) : '—' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[var(--radius)] bg-card p-5">
-              <p className="tabnum font-head text-[1.6rem] font-bold">{s.value}</p>
-              <p className="mt-1 text-[0.8rem] text-muted-foreground">{s.label}</p>
+            <div key={s.label} className="rounded-[var(--radius)] bg-card p-4 sm:p-5">
+              <p className="tabnum font-head text-[1.35rem] font-bold sm:text-[1.6rem]">{s.value}</p>
+              <p className="mt-1 text-[0.76rem] text-muted-foreground sm:text-[0.8rem]">{s.label}</p>
             </div>
           ))}
         </section>
@@ -179,7 +179,33 @@ const Team = () => {
           <h2 className="mb-4 font-head text-[1.5rem] font-bold tracking-[-0.03em]">
             Состав · {players.length} игроков
           </h2>
-          <div className="overflow-x-auto rounded-[var(--radius)] bg-card">
+          <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card sm:hidden">
+            {players.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="tabnum grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-[0.8rem] font-bold">
+                  {p.number}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[0.94rem] font-medium">{p.name}</span>
+                  <span className="block text-[0.76rem] text-muted-foreground">
+                    {p.position} · {p.games} игр · {p.yellow} жк / {p.red} кк
+                  </span>
+                </span>
+                <span className="shrink-0 text-right text-[0.78rem] text-muted-foreground">
+                  <b className="font-head text-[1.05rem] font-bold text-foreground">{p.goals}</b> гол
+                  <br />
+                  {p.assists} пас
+                </span>
+              </li>
+            ))}
+            {!players.length && (
+              <li className="px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+                Состав пока не заполнен
+              </li>
+            )}
+          </ul>
+
+          <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card sm:block">
             <table className="w-full min-w-[560px]">
               <thead>
                 <tr className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

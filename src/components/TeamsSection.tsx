@@ -68,14 +68,31 @@ const TeamsSection = () => {
       {!team ? (
         <p className="text-[0.9rem] text-muted-foreground">В этой группе пока нет команд</p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-          <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[280px_1fr]">
+          <div className="flex flex-wrap gap-2 lg:hidden">
             {teams.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActive(t.id)}
                 className={cn(
-                  'flex shrink-0 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-left transition-colors lg:w-full',
+                  'rounded-full px-3.5 py-2 text-[0.84rem] font-semibold transition-colors',
+                  active === t.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden flex-col gap-2 lg:flex">
+            {teams.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActive(t.id)}
+                className={cn(
+                  'flex w-full shrink-0 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-left transition-colors',
                   active === t.id ? 'bg-card ring-1 ring-accent/40' : 'bg-card/50 hover:bg-card',
                 )}
               >
@@ -97,7 +114,7 @@ const TeamsSection = () => {
             ))}
           </div>
 
-          <div className="animate-fade-in rounded-[var(--radius)] bg-card p-5" key={team.id}>
+          <div className="animate-fade-in min-w-0 rounded-[var(--radius)] bg-card p-4 sm:p-5" key={team.id}>
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
               <div>
                 <h3 className="font-head text-[1.35rem] font-bold tracking-[-0.02em]">{team.name}</h3>
@@ -127,7 +144,33 @@ const TeamsSection = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <ul className="mt-2 flex flex-col divide-y divide-border sm:hidden">
+              {squad.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 py-3">
+                  <span className="tabnum grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-[0.8rem] font-bold">
+                    {p.number}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[0.94rem] font-medium">{p.name}</span>
+                    <span className="block text-[0.76rem] text-muted-foreground">
+                      {p.position} · {p.games} игр
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right text-[0.78rem] text-muted-foreground">
+                    <b className="font-head text-[1.05rem] font-bold text-foreground">{p.goals}</b> гол
+                    <br />
+                    {p.assists} пас
+                  </span>
+                </li>
+              ))}
+              {!squad.length && (
+                <li className="py-8 text-center text-[0.85rem] text-muted-foreground">
+                  Состав пока не заполнен
+                </li>
+              )}
+            </ul>
+
+            <div className="hidden overflow-x-auto sm:block">
               <table className="mt-2 w-full min-w-[520px]">
                 <thead>
                   <tr className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

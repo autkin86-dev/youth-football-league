@@ -44,7 +44,71 @@ const StandingsSection = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[var(--radius)] bg-card">
+      <ul className="flex flex-col gap-2 lg:hidden">
+        {rows.map((r) => (
+          <li key={r.team} className="rounded-[var(--radius)] bg-card p-4">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  'tabnum grid h-7 w-7 shrink-0 place-items-center rounded-md text-[0.85rem] text-muted-foreground',
+                  r.pos <= 3 && 'bg-accent/15 font-bold text-accent',
+                )}
+              >
+                {r.pos}
+              </span>
+              <Link
+                to={`/team/${teamSlug(r.team, group)}`}
+                className={cn('min-w-0 flex-1 truncate text-[1rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
+              >
+                {r.team}
+              </Link>
+              <span className="tabnum shrink-0 font-head text-[1.35rem] font-bold leading-none">
+                {r.points}
+              </span>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.82rem] text-muted-foreground">
+              <span>
+                <b className="font-semibold text-foreground">{r.played}</b> игр
+              </span>
+              <span>
+                <b className="font-semibold text-win">{r.win}</b> в ·{' '}
+                <b className="font-semibold text-foreground">{r.draw}</b> н ·{' '}
+                <b className="font-semibold text-accent">{r.loss}</b> п
+              </span>
+              <span className="tabnum">
+                {r.scored}–{r.missed}
+              </span>
+              <span className="tabnum">
+                {goalDiff(r) > 0 ? '+' : ''}
+                {goalDiff(r)}
+              </span>
+              {r.form.length > 0 && (
+                <span className="flex gap-1">
+                  {r.form.map((f, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        'grid h-5 w-5 place-items-center rounded text-[0.62rem] font-bold',
+                        FORM_STYLE[f],
+                      )}
+                    >
+                      {f === 'W' ? 'В' : f === 'D' ? 'Н' : 'П'}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+          </li>
+        ))}
+        {!rows.length && (
+          <li className="rounded-[var(--radius)] bg-card px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+            Матчей пока не сыграно
+          </li>
+        )}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card lg:block">
         <table className="w-full min-w-[720px] border-collapse">
           <thead>
             <tr className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

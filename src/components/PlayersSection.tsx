@@ -78,7 +78,7 @@ const PlayersSection = () => {
               {s.label}
             </button>
           ))}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Icon
               name="Search"
               size={15}
@@ -88,7 +88,7 @@ const PlayersSection = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Игрок или команда"
-              className="h-10 w-[180px] rounded-full border-border bg-card pl-9 text-[0.85rem]"
+              className="h-10 w-full rounded-full border-border bg-card pl-9 text-[0.85rem] sm:w-[180px]"
             />
           </div>
         </div>
@@ -123,7 +123,51 @@ const PlayersSection = () => {
           </article>
         )}
 
-        <div className="overflow-x-auto rounded-[var(--radius)] bg-card">
+        <ul className="flex flex-col gap-2 lg:hidden">
+          {players.map((p, i) => (
+            <li key={`${p.name}|${p.team}`} className="rounded-[var(--radius)] bg-card p-4">
+              <div className="flex items-start gap-3">
+                <span className="tabnum grid h-7 w-7 shrink-0 place-items-center rounded-md bg-secondary text-[0.82rem] font-semibold text-muted-foreground">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.98rem] font-semibold leading-snug">{p.name}</p>
+                  <p className="mt-0.5 text-[0.8rem] text-muted-foreground">{p.team}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="tabnum font-head text-[1.35rem] font-bold leading-none">{p.goals}</p>
+                  <p className="mt-1 text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
+                    голы
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-[0.82rem] text-muted-foreground">
+                <span>
+                  <b className="font-semibold text-foreground">{p.assists}</b> пас
+                </span>
+                <span>
+                  <b className="font-semibold text-foreground">{p.games}</b> игр
+                </span>
+                <span className="tabnum flex items-center gap-1">
+                  <span className="h-3 w-2 rounded-[2px] bg-yellow-400" />
+                  {p.yellow}
+                </span>
+                <span className="tabnum flex items-center gap-1">
+                  <span className="h-3 w-2 rounded-[2px] bg-accent" />
+                  {p.red}
+                </span>
+              </div>
+            </li>
+          ))}
+          {!players.length && (
+            <li className="rounded-[var(--radius)] bg-card px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+              Ничего не нашлось — попробуйте другое имя.
+            </li>
+          )}
+        </ul>
+
+        <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card lg:block">
           <table className="w-full min-w-[620px]">
             <thead>
               <tr className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

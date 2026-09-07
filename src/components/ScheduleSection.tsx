@@ -77,7 +77,38 @@ const ScheduleSection = () => {
         ))}
       </div>
 
-      <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card">
+      <ul className="flex flex-col gap-2 sm:hidden">
+        {matches.map((m) => (
+          <li key={m.id} className="rounded-[var(--radius)] bg-card p-4">
+            <div className="flex items-center justify-between gap-2 text-[0.78rem] text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Icon name="Calendar" size={13} />
+                {m.date}
+              </span>
+              <span className="tabnum rounded-md bg-secondary px-2 py-0.5 font-head text-[0.8rem] font-bold text-foreground">
+                {m.time}
+              </span>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <p className="text-[1rem] font-semibold leading-snug">{m.home}</p>
+              <p className="text-[1rem] font-semibold leading-snug">{m.away}</p>
+            </div>
+            {m.venue && (
+              <p className="mt-3 flex items-center gap-1.5 border-t border-border pt-2.5 text-[0.78rem] text-muted-foreground">
+                <Icon name="MapPin" size={13} />
+                <span className="truncate">{m.venue}</span>
+              </p>
+            )}
+          </li>
+        ))}
+        {!matches.length && (
+          <li className="rounded-[var(--radius)] bg-card px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+            Матчей пока нет
+          </li>
+        )}
+      </ul>
+
+      <ul className="hidden divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card sm:block">
         {matches.map((m) => (
           <li
             key={m.id}

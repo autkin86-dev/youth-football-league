@@ -30,7 +30,51 @@ const OverallStandingsSection = () => {
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-[var(--radius)] bg-card">
+      <ul className="flex flex-col gap-2 lg:hidden">
+        {overall.map((r) => {
+          const grp = groupOf(r.team);
+          return (
+            <li key={r.team} className="rounded-[var(--radius)] bg-card p-4">
+              <div className="flex items-center gap-3">
+                <span
+                  className={cn(
+                    'tabnum grid h-7 w-7 shrink-0 place-items-center rounded-md text-[0.85rem] text-muted-foreground',
+                    r.pos <= 3 && 'bg-accent/15 font-bold text-accent',
+                  )}
+                >
+                  {r.pos}
+                </span>
+                {grp ? (
+                  <Link
+                    to={`/team/${teamSlug(r.team, grp)}`}
+                    className={cn('min-w-0 flex-1 truncate text-[1rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
+                  >
+                    {r.team}
+                  </Link>
+                ) : (
+                  <span className="min-w-0 flex-1 truncate text-[1rem] font-semibold">{r.team}</span>
+                )}
+                <span className="tabnum shrink-0 font-head text-[1.35rem] font-bold leading-none">
+                  {r.points}
+                </span>
+              </div>
+
+              <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
+                {OVERALL_GROUPS.map((g) => (
+                  <div key={g}>
+                    <p className="tabnum font-head text-[1.05rem] font-bold">{r.by_group[g] ?? '—'}</p>
+                    <p className="mt-0.5 text-[0.66rem] leading-tight text-muted-foreground">
+                      {AGE_GROUPS.find((ag) => ag.id === g)?.short ?? g}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card lg:block">
         <table className="w-full min-w-[720px] border-collapse">
           <thead>
             <tr className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
