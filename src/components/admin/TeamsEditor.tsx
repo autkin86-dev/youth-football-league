@@ -19,7 +19,7 @@ const empty = {
   founded: '',
   home: '',
   color: '',
-  age_group: '2013',
+  age_group: AGE_GROUPS[0].id,
 };
 
 const TeamsEditor = ({ token }: Props) => {
@@ -32,7 +32,7 @@ const TeamsEditor = ({ token }: Props) => {
   const [copied, setCopied] = useState<number | null>(null);
 
   const copyLink = (t: ApiTeam) => {
-    navigator.clipboard?.writeText(`${window.location.origin}/team/${teamSlug(t.name)}`);
+    navigator.clipboard?.writeText(`${window.location.origin}/team/${teamSlug(t.name, t.age_group)}`);
     setCopied(t.id);
     setTimeout(() => setCopied(null), 1800);
   };

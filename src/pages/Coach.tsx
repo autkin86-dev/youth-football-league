@@ -137,10 +137,17 @@ const Coach = () => {
 
   if (!session) return <CoachLogin onSuccess={setSession} />;
 
-  const players = squad.filter((p) => p.team === session.team).sort((a, b) => a.number - b.number);
+  const players = squad
+    .filter((p) => p.team === session.team && p.age_group === session.age_group)
+    .sort((a, b) => a.number - b.number);
 
   const upcomingMatches = raw
-    .filter((m) => !m.played && (m.home_team === session.team || m.away_team === session.team))
+    .filter(
+      (m) =>
+        !m.played &&
+        m.age_group === session.age_group &&
+        (m.home_team === session.team || m.away_team === session.team),
+    )
     .sort((a, b) => a.round - b.round);
 
   const submitReschedule = async () => {
@@ -243,7 +250,7 @@ const Coach = () => {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to={`/team/${teamSlug(session.team)}`}
+              to={`/team/${teamSlug(session.team, session.age_group)}`}
               className="rounded-full bg-secondary px-4 py-2 text-[0.85rem] font-semibold text-muted-foreground hover:text-foreground"
             >
               Страница команды

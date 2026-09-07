@@ -1,0 +1,1 @@
+UPDATE teams SET founded = 0 WHERE active = TRUE AND founded = 2026;

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { TEAMS } from '@/data/league';
+import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import { fetchCoaches, removeCoach, saveCoach, type CoachAccount } from '@/lib/league-api';
 
@@ -13,14 +13,19 @@ interface Props {
 
 const CoachAccounts = ({ token }: Props) => {
   const { teams: apiTeams } = useLeague();
-  const teamNames = apiTeams.length ? apiTeams.map((t) => t.name) : TEAMS.map((t) => t.name);
+
+  const groupsWithTeams = useMemo(
+    () => AGE_GROUPS.filter((g) => apiTeams.some((t) => t.age_group === g.id)),
+    [apiTeams],
+  );
 
   const [items, setItems] = useState<CoachAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CoachAccount | null>(null);
   const [login, setLogin] = useState('');
-  const [team, setTeam] = useState(teamNames[0] ?? '');
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | ''>('');
+  const [team, setTeam] = useState('');
   const [coachName, setCoachName] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -34,19 +39,33 @@ const CoachAccounts = ({ token }: Props) => {
       .finally(() => setLoading(false));
   }, [token]);
 
+  useEffect(() => {
+    if (groupsWithTeams.length && !ageGroup) setAgeGroup(groupsWithTeams[0].id);
+  }, [groupsWithTeams, ageGroup]);
+
+  const teamsInGroup = useMemo(
+    () => apiTeams.filter((t) => t.age_group === ageGroup).map((t) => t.name),
+    [apiTeams, ageGroup],
+  );
+
+  useEffect(() => {
+    if (teamsInGroup.length && !teamsInGroup.includes(team)) setTeam(teamsInGroup[0]);
+  }, [teamsInGroup, team]);
+
   const reset = () => {
     setOpen(false);
     setEditing(null);
     setLogin('');
     setCoachName('');
     setPassword('');
-    setTeam(teamNames[0] ?? '');
+    setAgeGroup(groupsWithTeams[0]?.id ?? '');
     setError('');
   };
 
   const startEdit = (c: CoachAccount) => {
     setEditing(c);
     setLogin(c.login);
+    setAgeGroup(c.age_group as AgeGroup);
     setTeam(c.team);
     setCoachName(c.coach_name);
     setPassword('');
@@ -57,6 +76,7 @@ const CoachAccounts = ({ token }: Props) => {
   const submit = async () => {
     setError('');
     if (login.trim().length < 3) return setError('Логин минимум 3 символа');
+    if (!ageGroup) return setError('Выберите возрастную группу');
     if (!editing && password.length < 4) return setError('Пароль минимум 4 символа');
     setBusy(true);
     try {
@@ -65,6 +85,7 @@ const CoachAccounts = ({ token }: Props) => {
           id: editing?.id,
           login: login.trim().toLowerCase(),
           team,
+          age_group: ageGroup,
           coach_name: coachName.trim(),
           password: password || undefined,
         }),
@@ -94,6 +115,8 @@ const CoachAccounts = ({ token }: Props) => {
     setCopied(c.id);
     setTimeout(() => setCopied(null), 1800);
   };
+
+  const groupLabel = (id: string) => AGE_GROUPS.find((g) => g.id === id)?.short ?? id;
 
   return (
     <section className="mt-10">
@@ -163,9 +186,27 @@ const CoachAccounts = ({ token }: Props) => {
             </div>
           </div>
 
+          <label className="eyebrow mb-2 mt-4 block">Возрастная группа</label>
+          <div className="flex flex-wrap gap-1.5">
+            {groupsWithTeams.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setAgeGroup(g.id)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[0.78rem] font-medium transition-colors',
+                  ageGroup === g.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {g.short}
+              </button>
+            ))}
+          </div>
+
           <label className="eyebrow mb-2 mt-4 block">Команда</label>
           <div className="flex flex-wrap gap-1.5">
-            {teamNames.map((t) => (
+            {teamsInGroup.map((t) => (
               <button
                 key={t}
                 onClick={() => setTeam(t)}
@@ -200,6 +241,9 @@ const CoachAccounts = ({ token }: Props) => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-head text-[1.02rem] font-bold">{c.team}</span>
+                <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground">
+                  {groupLabel(c.age_group)}
+                </span>
                 <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground">
                   логин: {c.login}
                 </span>

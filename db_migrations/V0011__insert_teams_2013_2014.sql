@@ -1,0 +1,12 @@
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Взлет', '', '', 2026, 'СК «Речной»', 'Бело-синие · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Стекон', '', '', 2026, 'СК «Речной»', 'Красно-чёрные · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Пилот', '', '', 2026, 'СК «Речной»', 'Сине-жёлтые · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Азбука спорта', '', '', 2026, 'СК «Речной»', 'Зелёно-белые · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Гермес', '', '', 2026, 'СК «Речной»', 'Оранжево-чёрные · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Родина', '', '', 2026, 'СК «Речной»', 'Бело-красные · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Буря', '', '', 2026, 'СК «Речной»', 'Тёмно-синие · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Время первых', '', '', 2026, 'СК «Речной»', 'Жёлто-синие · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Сокол-Сервантинос', '', '', 2026, 'СК «Речной»', 'Красно-белые · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Олимп', '', '', 2026, 'СК «Речной»', 'Бело-голубые · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('Пантеры', '', '', 2026, 'СК «Речной»', 'Чёрно-жёлтые · формат 8х8', '2013-2014');
+INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES ('САО', '', '', 2026, 'СК «Речной»', 'Сине-белые · формат 8х8', '2013-2014');

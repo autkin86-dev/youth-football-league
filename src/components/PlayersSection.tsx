@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
+import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
 type SortKey = 'goals' | 'assists' | 'yellow';
@@ -17,13 +18,25 @@ const PlayersSection = () => {
   const [query, setQuery] = useState('');
   const { players: source } = useLeague();
 
+  const groupsWithPlayers = useMemo(
+    () => AGE_GROUPS.filter((g) => source.some((p) => p.group === g.id)),
+    [source],
+  );
+  const [group, setGroup] = useState<AgeGroup | ''>('');
+  useEffect(() => {
+    if (groupsWithPlayers.length && !groupsWithPlayers.some((g) => g.id === group)) {
+      setGroup(groupsWithPlayers[0].id);
+    }
+  }, [groupsWithPlayers, group]);
+
   const players = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...source]
+    return source
+      .filter((p) => p.group === group)
       .filter((p) => !q || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))
       .sort((a, b) => b[sort] - a[sort] || b.goals - a.goals)
       .slice(0, 12);
-  }, [sort, query, source]);
+  }, [sort, query, source, group]);
 
   const top = players[0];
 
@@ -37,6 +50,20 @@ const PlayersSection = () => {
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {groupsWithPlayers.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGroup(g.id)}
+              className={cn(
+                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+                group === g.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {g.short}
+            </button>
+          ))}
           {SORTS.map((s) => (
             <button
               key={s.id}
@@ -112,7 +139,7 @@ const PlayersSection = () => {
             <tbody>
               {players.map((p, i) => (
                 <tr
-                  key={p.name}
+                  key={`${p.name}|${p.team}`}
                   className="border-t border-border text-[0.9rem] transition-colors hover:bg-secondary/40"
                 >
                   <td className="tabnum px-4 py-3 text-muted-foreground">{i + 1}</td>

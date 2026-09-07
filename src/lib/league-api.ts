@@ -122,12 +122,14 @@ export interface CoachAccount {
   id: number;
   login: string;
   team: string;
+  age_group: string;
   coach_name: string;
 }
 
 export interface CoachSession {
   token: string;
   team: string;
+  age_group: string;
   coach_name: string;
 }
 
@@ -153,7 +155,14 @@ export const fetchCoaches = async (token: string): Promise<CoachAccount[]> => {
 
 export const saveCoach = async (
   token: string,
-  payload: { id?: number; login: string; team: string; coach_name?: string; password?: string },
+  payload: {
+    id?: number;
+    login: string;
+    team: string;
+    age_group: string;
+    coach_name?: string;
+    password?: string;
+  },
 ): Promise<CoachAccount[]> => {
   const res = await fetch(`${LEAGUE_API}?action=save_coach`, {
     method: 'POST',
@@ -263,11 +272,17 @@ export const removePlayer = async (token: string, id: number): Promise<LeagueDat
   return data;
 };
 
+const formatMatchDate = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
+};
+
 export const toMatch = (m: ApiMatch): Match => ({
   id: String(m.id),
   round: m.round,
   group: m.age_group as AgeGroup,
-  date: m.match_date,
+  date: formatMatchDate(m.match_date),
   time: m.match_time,
   venue: m.venue,
   home: m.home_team,
@@ -310,8 +325,10 @@ export const toPlayers = (players: ApiPlayer[], matches: ApiMatch[]): Player[] =
   matches
     .filter((m) => m.played)
     .forEach((m) => {
-      gamesByTeam.set(m.home_team, (gamesByTeam.get(m.home_team) ?? 0) + 1);
-      gamesByTeam.set(m.away_team, (gamesByTeam.get(m.away_team) ?? 0) + 1);
+      const homeKey = `${m.home_team}|${m.age_group}`;
+      const awayKey = `${m.away_team}|${m.age_group}`;
+      gamesByTeam.set(homeKey, (gamesByTeam.get(homeKey) ?? 0) + 1);
+      gamesByTeam.set(awayKey, (gamesByTeam.get(awayKey) ?? 0) + 1);
     });
 
   return players.map((p) => {
@@ -322,7 +339,7 @@ export const toPlayers = (players: ApiPlayer[], matches: ApiMatch[]): Player[] =
       group: p.group as AgeGroup,
       position: meta?.position ?? 'Полузащитник',
       number: meta?.number ?? 0,
-      games: gamesByTeam.get(p.team) ?? 0,
+      games: gamesByTeam.get(`${p.team}|${p.group}`) ?? 0,
       goals: p.goals,
       assists: p.assists,
       yellow: p.yellow,

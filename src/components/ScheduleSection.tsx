@@ -1,19 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
+import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
 const ScheduleSection = () => {
   const { schedule } = useLeague();
-  const rounds = useMemo(
-    () => Array.from(new Set(schedule.map((m) => m.round))).sort((a, b) => a - b),
+
+  const groupsWithMatches = useMemo(
+    () => AGE_GROUPS.filter((g) => schedule.some((m) => m.group === g.id)),
     [schedule],
+  );
+  const [group, setGroup] = useState<AgeGroup | ''>('');
+  useEffect(() => {
+    if (groupsWithMatches.length && !groupsWithMatches.some((g) => g.id === group)) {
+      setGroup(groupsWithMatches[0].id);
+    }
+  }, [groupsWithMatches, group]);
+
+  const groupSchedule = useMemo(
+    () => schedule.filter((m) => m.group === group),
+    [schedule, group],
+  );
+  const rounds = useMemo(
+    () => Array.from(new Set(groupSchedule.map((m) => m.round))).sort((a, b) => a - b),
+    [groupSchedule],
   );
   const [round, setRound] = useState<number | null>(null);
   useEffect(() => {
-    if (round === null && rounds.length) setRound(rounds[0]);
+    if (rounds.length && !rounds.includes(round ?? -1)) setRound(rounds[0]);
   }, [rounds, round]);
-  const matches = schedule.filter((m) => m.round === (round ?? rounds[0]));
+  const matches = groupSchedule.filter((m) => m.round === (round ?? rounds[0]));
 
   return (
     <section id="raspisanie" className="scroll-mt-24 py-14">
@@ -24,22 +41,40 @@ const ScheduleSection = () => {
             Расписание матчей
           </h2>
         </div>
-        <div className="flex gap-2">
-          {rounds.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRound(r)}
-              className={cn(
-                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                (round ?? rounds[0]) === r
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {r} тур
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {groupsWithMatches.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => setGroup(g.id)}
+            className={cn(
+              'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+              group === g.id
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {g.short}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {rounds.map((r) => (
+          <button
+            key={r}
+            onClick={() => setRound(r)}
+            className={cn(
+              'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+              (round ?? rounds[0]) === r
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {r} тур
+          </button>
+        ))}
       </div>
 
       <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card">
@@ -65,6 +100,11 @@ const ScheduleSection = () => {
             </div>
           </li>
         ))}
+        {!matches.length && (
+          <li className="px-5 py-8 text-center text-[0.9rem] text-muted-foreground">
+            Матчей пока нет
+          </li>
+        )}
       </ul>
     </section>
   );

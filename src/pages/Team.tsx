@@ -22,7 +22,8 @@ const slugify = (name: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-export const teamSlug = slugify;
+export const teamSlug = (name: string, ageGroup?: string) =>
+  ageGroup ? `${slugify(name)}-${slugify(ageGroup)}` : slugify(name);
 
 const FORM_STYLE = {
   W: 'bg-win/15 text-win',
@@ -38,10 +39,15 @@ const Team = () => {
     ? apiTeams.map((t) => ({ ...t, group: t.age_group }))
     : TEAMS.map((t, i) => ({ ...t, id: i, age_group: t.group }));
 
-  const team = teams.find((t) => slugify(t.name) === slug);
+  const team = teams.find((t) => teamSlug(t.name, t.age_group) === slug);
 
   const players = useMemo(
-    () => (team ? squad.filter((p) => p.team === team.name).sort((a, b) => a.number - b.number) : []),
+    () =>
+      team
+        ? squad
+            .filter((p) => p.team === team.name && p.age_group === team.age_group)
+            .sort((a, b) => a.number - b.number)
+        : [],
     [squad, team],
   );
 
@@ -49,7 +55,10 @@ const Team = () => {
     () =>
       team
         ? matches
-            .filter((m) => m.home === team.name || m.away === team.name)
+            .filter(
+              (m) =>
+                (m.home === team.name || m.away === team.name) && m.group === team.age_group,
+            )
             .sort((a, b) => a.round - b.round)
         : [],
     [matches, team],

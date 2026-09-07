@@ -1,0 +1,15 @@
+UPDATE teams SET active = FALSE WHERE active = TRUE;
+UPDATE squad_players SET active = FALSE WHERE active = TRUE;
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT TRUE;
+UPDATE matches SET active = FALSE WHERE active = TRUE;
+CREATE TABLE IF NOT EXISTS season_player_stats (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    team TEXT NOT NULL,
+    age_group TEXT NOT NULL,
+    goals INTEGER NOT NULL DEFAULT 0,
+    assists INTEGER NOT NULL DEFAULT 0,
+    yellow INTEGER NOT NULL DEFAULT 0,
+    red INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE
+);

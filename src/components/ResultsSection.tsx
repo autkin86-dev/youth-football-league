@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { type Match } from '@/data/league';
+import { AGE_GROUPS, type AgeGroup, type Match } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
 interface Props {
@@ -10,15 +10,31 @@ interface Props {
 
 const ResultsSection = ({ onOpenProtocol }: Props) => {
   const { results } = useLeague();
-  const rounds = useMemo(
-    () => Array.from(new Set(results.map((m) => m.round))).sort((a, b) => b - a),
+
+  const groupsWithResults = useMemo(
+    () => AGE_GROUPS.filter((g) => results.some((m) => m.group === g.id)),
     [results],
+  );
+  const [group, setGroup] = useState<AgeGroup | ''>('');
+  useEffect(() => {
+    if (groupsWithResults.length && !groupsWithResults.some((g) => g.id === group)) {
+      setGroup(groupsWithResults[0].id);
+    }
+  }, [groupsWithResults, group]);
+
+  const groupResults = useMemo(
+    () => results.filter((m) => m.group === group),
+    [results, group],
+  );
+  const rounds = useMemo(
+    () => Array.from(new Set(groupResults.map((m) => m.round))).sort((a, b) => b - a),
+    [groupResults],
   );
   const [round, setRound] = useState<number | null>(null);
   useEffect(() => {
-    if (round === null && rounds.length) setRound(rounds[0]);
+    if (rounds.length && !rounds.includes(round ?? -1)) setRound(rounds[0]);
   }, [rounds, round]);
-  const matches = results.filter((m) => m.round === (round ?? rounds[0]));
+  const matches = groupResults.filter((m) => m.round === (round ?? rounds[0]));
 
   return (
     <section id="rezultaty" className="scroll-mt-24 py-14">
@@ -32,22 +48,40 @@ const ResultsSection = ({ onOpenProtocol }: Props) => {
             Нажмите на матч, чтобы открыть протокол: голы, минуты и карточки.
           </p>
         </div>
-        <div className="flex gap-2">
-          {rounds.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRound(r)}
-              className={cn(
-                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                (round ?? rounds[0]) === r
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {r} тур
-            </button>
-          ))}
-        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {groupsWithResults.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => setGroup(g.id)}
+            className={cn(
+              'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+              group === g.id
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {g.short}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {rounds.map((r) => (
+          <button
+            key={r}
+            onClick={() => setRound(r)}
+            className={cn(
+              'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+              (round ?? rounds[0]) === r
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {r} тур
+          </button>
+        ))}
       </div>
 
       <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
@@ -87,6 +121,11 @@ const ResultsSection = ({ onOpenProtocol }: Props) => {
             </button>
           );
         })}
+        {!matches.length && (
+          <p className="col-span-full py-8 text-center text-[0.9rem] text-muted-foreground">
+            Результатов пока нет
+          </p>
+        )}
       </div>
     </section>
   );

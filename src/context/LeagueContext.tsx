@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { AgeGroup, Match, Player, TeamRow } from '@/data/league';
-import { STANDINGS, RESULTS, SCHEDULE, ALL_PLAYERS } from '@/data/league';
+import type { Match, Player, TeamRow } from '@/data/league';
 import {
   fetchLeague,
   toMatch,
@@ -56,15 +55,15 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
       return {
         loading,
         raw: [],
-        matches: [...RESULTS, ...SCHEDULE],
-        results: RESULTS,
-        schedule: SCHEDULE,
-        standings: STANDINGS as Record<string, TeamRow[]>,
-        players: ALL_PLAYERS,
+        matches: [],
+        results: [],
+        schedule: [],
+        standings: {},
+        players: [],
         squad: [],
         teams: [],
-        nextMatch: SCHEDULE[0] ?? null,
-        lastRound: RESULTS[0]?.round ?? 0,
+        nextMatch: null,
+        lastRound: 0,
         applyData: setData,
         reload,
       };
@@ -78,9 +77,6 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
     const standings: Record<string, TeamRow[]> = {};
     Object.entries(data.standings).forEach(([g, rows]) => {
       standings[g] = toRows(rows);
-    });
-    (['2011', '2012', '2013'] as AgeGroup[]).forEach((g) => {
-      if (!standings[g]) standings[g] = STANDINGS[g];
     });
 
     return {

@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { TEAMS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import { removePlayer, savePlayer, type SquadPlayer } from '@/lib/league-api';
 
@@ -14,11 +13,11 @@ interface Props {
 }
 
 const SquadEditor = ({ token }: Props) => {
-  const { squad, applyData } = useLeague();
+  const { squad, teams: apiTeams, applyData } = useLeague();
   const teams = useMemo(() => {
     const fromSquad = Array.from(new Set(squad.map((p) => p.team)));
-    return Array.from(new Set([...TEAMS.map((t) => t.name), ...fromSquad]));
-  }, [squad]);
+    return Array.from(new Set([...apiTeams.map((t) => t.name), ...fromSquad]));
+  }, [squad, apiTeams]);
 
   const [team, setTeam] = useState(teams[0] ?? '');
   const [editing, setEditing] = useState<SquadPlayer | null>(null);
@@ -51,10 +50,11 @@ const SquadEditor = ({ token }: Props) => {
     if (name.trim().length < 2) return setError('Укажите фамилию и имя игрока');
     setBusy(true);
     try {
+      const teamGroup = apiTeams.find((t) => t.name === team)?.age_group;
       const data = await savePlayer(token, {
         id: editing?.id,
         team,
-        age_group: '2013',
+        age_group: teamGroup ?? editing?.age_group ?? '',
         name: name.trim(),
         number: Number(number) || 0,
         position,

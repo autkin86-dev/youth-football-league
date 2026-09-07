@@ -18,7 +18,7 @@ interface Props {
 const NewMatchForm = ({ token, knownTeams, suggestedRound, onSaved, onClose }: Props) => {
   const { teams: apiTeams } = useLeague();
   const [round, setRound] = useState(String(suggestedRound));
-  const [group, setGroup] = useState<AgeGroup>('2013');
+  const [group, setGroup] = useState<AgeGroup>(AGE_GROUPS[0].id);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [venue, setVenue] = useState('');

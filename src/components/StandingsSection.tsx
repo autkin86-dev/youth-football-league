@@ -13,7 +13,7 @@ const FORM_STYLE = {
 } as const;
 
 const StandingsSection = () => {
-  const [group, setGroup] = useState<AgeGroup>('2013');
+  const [group, setGroup] = useState<AgeGroup>(AGE_GROUPS[0].id);
   const { standings } = useLeague();
   const rows = standings[group] ?? [];
 
@@ -77,7 +77,7 @@ const StandingsSection = () => {
                   </span>
                 </td>
                 <td className={cn('px-2 py-3 font-medium', r.pos === 1 && 'font-bold')}>
-                  <Link to={`/team/${teamSlug(r.team)}`} className="story-link hover:text-foreground">
+                  <Link to={`/team/${teamSlug(r.team, group)}`} className="story-link hover:text-foreground">
                     {r.team}
                   </Link>
                 </td>

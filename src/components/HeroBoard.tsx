@@ -8,12 +8,15 @@ interface Props {
 }
 
 const HeroBoard = ({ onOpenProtocol }: Props) => {
-  const { results, standings, nextMatch, lastRound } = useLeague();
-  const round6 = results.filter((m) => m.round === lastRound).slice(0, 4);
-  const table = standings['2013'] ?? [];
+  const { results, standings, nextMatch } = useLeague();
   const NEXT_MATCH = nextMatch;
 
   if (!NEXT_MATCH) return null;
+
+  const groupResults = results.filter((m) => m.group === NEXT_MATCH.group);
+  const groupLastRound = groupResults[0]?.round ?? 0;
+  const round6 = groupResults.filter((m) => m.round === groupLastRound).slice(0, 4);
+  const table = standings[NEXT_MATCH.group] ?? [];
 
   const topScorer = round6
     .flatMap((m) => m.goals ?? [])
@@ -80,7 +83,7 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
       {/* Результаты тура */}
       <section className="flex flex-col lg:col-span-2">
         <div className="flex items-baseline justify-between px-0.5 pb-3">
-          <span className="eyebrow">Результаты {lastRound} тура</span>
+          <span className="eyebrow">Результаты {groupLastRound} тура</span>
           <span className="text-[0.82rem] text-muted-foreground">{round6[0]?.date ?? ''}</span>
         </div>
         <div className="grid flex-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">

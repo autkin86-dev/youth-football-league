@@ -52,7 +52,7 @@ def conn():
 
 
 def load_all(cur):
-    cur.execute('SELECT * FROM matches ORDER BY round DESC, id ASC')
+    cur.execute('SELECT * FROM matches WHERE active = TRUE ORDER BY round DESC, id ASC')
     matches = [dict(r) for r in cur.fetchall()]
     cur.execute('SELECT * FROM match_goals ORDER BY minute ASC')
     goals = [dict(r) for r in cur.fetchall()]
@@ -149,6 +149,18 @@ def load_all(cur):
             else:
                 p['yellow'] += 1
 
+    cur.execute('SELECT * FROM season_player_stats WHERE active = TRUE')
+    for sp in cur.fetchall():
+        key = (sp['name'], sp['team'])
+        p = players.setdefault(key, {
+            'name': sp['name'], 'team': sp['team'], 'group': sp['age_group'],
+            'goals': 0, 'assists': 0, 'yellow': 0, 'red': 0
+        })
+        p['goals'] += sp['goals']
+        p['assists'] += sp['assists']
+        p['yellow'] += sp['yellow']
+        p['red'] += sp['red']
+
     cur.execute('SELECT * FROM squad_players WHERE active = TRUE ORDER BY team, number')
     squad = [dict(r) for r in cur.fetchall()]
 
@@ -199,7 +211,7 @@ def handler(event: dict, context) -> dict:
                 cur.close()
                 c.close()
                 return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
-            cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+            cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
             coaches = [dict(r) for r in cur.fetchall()]
             cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
             rows = [dict(r) for r in cur.fetchall()]
@@ -238,7 +250,7 @@ def handler(event: dict, context) -> dict:
         cur = c.cursor(cursor_factory=RealDictCursor)
         cur.execute(
             "INSERT INTO team_applications (team_name, coach, phone, age_group, comment) VALUES "
-            f"('{esc(team)}', '{esc(coach)}', '{esc(phone)}', '{esc(body.get('age_group', '2013'))}', "
+            f"('{esc(team)}', '{esc(coach)}', '{esc(phone)}', '{esc(body.get('age_group', '2011-2012'))}', "
             f"'{esc(str(body.get('comment', ''))[:500])}') RETURNING id"
         )
         new_id = cur.fetchone()['id']
@@ -269,7 +281,8 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Неверный логин или пароль'}, ensure_ascii=False)}
         acc = dict(row)
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({
-            'token': acc['password_hash'], 'team': acc['team'], 'coach_name': acc['coach_name'],
+            'token': acc['password_hash'], 'team': acc['team'], 'age_group': acc['age_group'],
+            'coach_name': acc['coach_name'],
         }, ensure_ascii=False)}
 
     # Тренер может менять только состав своей команды
@@ -283,9 +296,9 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход'}, ensure_ascii=False)}
 
         if action == 'remove_player':
-            cur.execute(f"SELECT team FROM squad_players WHERE id={int(body.get('id'))}")
+            cur.execute(f"SELECT team, age_group FROM squad_players WHERE id={int(body.get('id'))}")
             target = cur.fetchone()
-            if not target or target['team'] != acc['team']:
+            if not target or target['team'] != acc['team'] or target['age_group'] != acc['age_group']:
                 cur.close()
                 c.close()
                 return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
@@ -298,9 +311,9 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите имя игрока'}, ensure_ascii=False)}
             pid = body.get('id')
             if pid:
-                cur.execute(f"SELECT team FROM squad_players WHERE id={int(pid)}")
+                cur.execute(f"SELECT team, age_group FROM squad_players WHERE id={int(pid)}")
                 target = cur.fetchone()
-                if not target or target['team'] != acc['team']:
+                if not target or target['team'] != acc['team'] or target['age_group'] != acc['age_group']:
                     cur.close()
                     c.close()
                     return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
@@ -311,7 +324,7 @@ def handler(event: dict, context) -> dict:
             else:
                 cur.execute(
                     "INSERT INTO squad_players (team, age_group, name, number, position) VALUES "
-                    f"('{esc(acc['team'])}', '{esc(body.get('age_group', '2013'))}', '{esc(name)}', "
+                    f"('{esc(acc['team'])}', '{esc(acc['age_group'])}', '{esc(name)}', "
                     f"{int(body.get('number') or 0)}, '{esc(body.get('position', 'Полузащитник'))}')"
                 )
         c.commit()
@@ -390,13 +403,17 @@ def handler(event: dict, context) -> dict:
         login = str(body.get('login', '')).strip().lower()
         pwd = str(body.get('password', ''))
         team = str(body.get('team', '')).strip()
-        if len(login) < 3 or len(team) < 2:
+        age_group = str(body.get('age_group', '')).strip()
+        if len(login) < 3 or len(team) < 2 or not age_group:
             cur.close()
             c.close()
-            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите логин и команду'}, ensure_ascii=False)}
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите логин, команду и возрастную группу'}, ensure_ascii=False)}
         cid = body.get('id')
         if cid:
-            sets = f"login='{esc(login)}', team='{esc(team)}', coach_name='{esc(body.get('coach_name', ''))}'"
+            sets = (
+                f"login='{esc(login)}', team='{esc(team)}', age_group='{esc(age_group)}', "
+                f"coach_name='{esc(body.get('coach_name', ''))}'"
+            )
             if pwd:
                 sets += f", password_hash='{esc(coach_token(login, pwd))}'"
             cur.execute(f'UPDATE coach_accounts SET {sets} WHERE id={int(cid)}')
@@ -406,11 +423,11 @@ def handler(event: dict, context) -> dict:
                 c.close()
                 return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Пароль минимум 4 символа'}, ensure_ascii=False)}
             cur.execute(
-                "INSERT INTO coach_accounts (login, team, coach_name, password_hash) VALUES "
-                f"('{esc(login)}', '{esc(team)}', '{esc(body.get('coach_name', ''))}', '{esc(coach_token(login, pwd))}')"
+                "INSERT INTO coach_accounts (login, team, age_group, coach_name, password_hash) VALUES "
+                f"('{esc(login)}', '{esc(team)}', '{esc(age_group)}', '{esc(body.get('coach_name', ''))}', '{esc(coach_token(login, pwd))}')"
             )
         c.commit()
-        cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         c.close()
@@ -419,7 +436,7 @@ def handler(event: dict, context) -> dict:
     if action == 'remove_coach':
         cur.execute(f"UPDATE coach_accounts SET active = FALSE WHERE id={int(body.get('id'))}")
         c.commit()
-        cur.execute('SELECT id, login, team, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         c.close()
@@ -449,7 +466,7 @@ def handler(event: dict, context) -> dict:
         fields = (
             f"name='{esc(tname)}', district='{esc(body.get('district', ''))}', coach='{esc(body.get('coach', ''))}', "
             f"founded={int(body.get('founded') or 0)}, home='{esc(body.get('home', ''))}', "
-            f"color='{esc(body.get('color', ''))}', age_group='{esc(body.get('age_group', '2013'))}'"
+            f"color='{esc(body.get('color', ''))}', age_group='{esc(body.get('age_group', '2011-2012'))}'"
         )
         if tid:
             cur.execute(f'SELECT name FROM teams WHERE id={int(tid)}')
@@ -465,7 +482,7 @@ def handler(event: dict, context) -> dict:
                 "INSERT INTO teams (name, district, coach, founded, home, color, age_group) VALUES "
                 f"('{esc(tname)}', '{esc(body.get('district', ''))}', '{esc(body.get('coach', ''))}', "
                 f"{int(body.get('founded') or 0)}, '{esc(body.get('home', ''))}', '{esc(body.get('color', ''))}', "
-                f"'{esc(body.get('age_group', '2013'))}')"
+                f"'{esc(body.get('age_group', '2011-2012'))}')"
             )
         c.commit()
         data = load_all(cur)
@@ -497,7 +514,7 @@ def handler(event: dict, context) -> dict:
         else:
             cur.execute(
                 "INSERT INTO squad_players (team, age_group, name, number, position) VALUES "
-                f"('{esc(body.get('team', ''))}', '{esc(body.get('age_group', '2013'))}', '{esc(name)}', "
+                f"('{esc(body.get('team', ''))}', '{esc(body.get('age_group', '2011-2012'))}', '{esc(name)}', "
                 f"{int(body.get('number') or 0)}, '{esc(body.get('position', 'Полузащитник'))}')"
             )
         c.commit()
@@ -533,7 +550,7 @@ def handler(event: dict, context) -> dict:
         else:
             cur.execute(
                 "INSERT INTO matches (round, age_group, match_date, match_time, venue, home_team, away_team, home_goals, away_goals, referee, played) "
-                f"VALUES ({int(body.get('round', 1))}, '{esc(body.get('age_group', '2013'))}', '{esc(body.get('match_date', ''))}', "
+                f"VALUES ({int(body.get('round', 1))}, '{esc(body.get('age_group', '2011-2012'))}', '{esc(body.get('match_date', ''))}', "
                 f"'{esc(body.get('match_time', ''))}', '{esc(body.get('venue', ''))}', '{esc(body.get('home_team', ''))}', "
                 f"'{esc(body.get('away_team', ''))}', {hg_sql}, {ag_sql}, '{esc(body.get('referee', ''))}', {'TRUE' if played else 'FALSE'}) RETURNING id"
             )
