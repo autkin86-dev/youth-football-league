@@ -12,8 +12,10 @@ import ReschedulesList from '@/components/admin/ReschedulesList';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
 import { downloadProtocolDoc, downloadProtocolsDoc } from '@/lib/protocol-doc';
+import { useSeo } from '@/hooks/use-seo';
 
 const Admin = () => {
+  useSeo({ title: 'Вход для судей', path: '/admin', noindex: true });
   const [token, setToken] = useState<string | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);

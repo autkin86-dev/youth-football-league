@@ -4,6 +4,7 @@ import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS, SEASON, TEAMS, goalDiff } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
+import { useSeo } from '@/hooks/use-seo';
 
 const TRANSLIT: Record<string, string> = {
   а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i',
@@ -67,6 +68,15 @@ const Team = () => {
   const row = team
     ? (standings[team.age_group] ?? []).find((r) => r.team === team.name)
     : undefined;
+
+  useSeo({
+    title: team ? `${team.name} (${team.age_group})` : 'Команда не найдена',
+    description: team
+      ? `Команда «${team.name}» — Первенство САО по футболу, возрастная группа ${team.age_group}. Состав, расписание матчей и результаты.`
+      : undefined,
+    path: `/team/${slug}`,
+    noindex: !team,
+  });
 
   if (!team) {
     return (

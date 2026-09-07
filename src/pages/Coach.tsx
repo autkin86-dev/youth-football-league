@@ -17,6 +17,7 @@ import {
   type SquadPlayer,
 } from '@/lib/league-api';
 import { teamSlug } from '@/pages/Team';
+import { useSeo } from '@/hooks/use-seo';
 
 const POSITIONS = ['Вратарь', 'Защитник', 'Полузащитник', 'Нападающий'];
 const STORAGE = 'sao_coach_session';
@@ -96,6 +97,7 @@ const RESCHEDULE_STATUS = {
 } as const;
 
 const Coach = () => {
+  useSeo({ title: 'Кабинет тренера', path: '/coach', noindex: true });
   const [session, setSession] = useState<CoachSession | null>(null);
   const { squad, raw, applyData, reload } = useLeague();
 
