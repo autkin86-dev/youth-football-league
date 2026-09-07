@@ -85,9 +85,23 @@ export interface ApiTeam {
   age_group: string;
 }
 
+export interface ApiOverallRow {
+  pos: number;
+  team: string;
+  points: number;
+  played: number;
+  win: number;
+  draw: number;
+  loss: number;
+  scored: number;
+  missed: number;
+  by_group: Record<string, number>;
+}
+
 export interface LeagueData {
   matches: ApiMatch[];
   standings: Record<string, ApiRow[]>;
+  overall: ApiOverallRow[];
   players: ApiPlayer[];
   squad: SquadPlayer[];
   teams: ApiTeam[];

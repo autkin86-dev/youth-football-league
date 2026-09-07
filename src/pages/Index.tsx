@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SiteHeader, { SECTION_LINKS } from '@/components/SiteHeader';
 import HeroBoard from '@/components/HeroBoard';
+import OverallStandingsSection from '@/components/OverallStandingsSection';
 import StandingsSection from '@/components/StandingsSection';
 import ScheduleSection from '@/components/ScheduleSection';
 import ResultsSection from '@/components/ResultsSection';
@@ -61,7 +62,10 @@ const Index = () => {
               {renderSection()}
             </div>
           ) : (
-            <HeroBoard onOpenProtocol={setProtocol} />
+            <>
+              <HeroBoard onOpenProtocol={setProtocol} />
+              <OverallStandingsSection />
+            </>
           )}
         </main>
         <SiteFooter />

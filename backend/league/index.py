@@ -185,9 +185,34 @@ def load_all(cur):
     cur.execute('SELECT * FROM teams WHERE active = TRUE ORDER BY age_group, name')
     teams = [dict(r) for r in cur.fetchall()]
 
+    overall_groups = ['2011-2012', '2013-2014', '2015-2016', '2017-2018']
+    overall_acc = {}
+    for grp in overall_groups:
+        for r in table.get(grp, []):
+            o = overall_acc.setdefault(r['team'], {
+                'team': r['team'], 'points': 0, 'played': 0,
+                'win': 0, 'draw': 0, 'loss': 0, 'scored': 0, 'missed': 0,
+                'by_group': {},
+            })
+            o['points'] += r['points']
+            o['played'] += r['played']
+            o['win'] += r['win']
+            o['draw'] += r['draw']
+            o['loss'] += r['loss']
+            o['scored'] += r['scored']
+            o['missed'] += r['missed']
+            o['by_group'][grp] = r['points']
+    overall = sorted(
+        overall_acc.values(),
+        key=lambda r: (-r['points'], -(r['scored'] - r['missed']), r['team'])
+    )
+    for i, r in enumerate(overall):
+        r['pos'] = i + 1
+
     return {
         'matches': matches,
         'standings': table,
+        'overall': overall,
         'teams': teams,
         'squad': squad,
         'players': sorted(players.values(), key=lambda p: (-p['goals'], -p['assists'], p['name'])),

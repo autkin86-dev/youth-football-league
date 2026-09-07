@@ -6,6 +6,7 @@ import {
   toPlayers,
   toRows,
   type ApiMatch,
+  type ApiOverallRow,
   type LeagueData,
   type SquadPlayer,
   type ApiTeam,
@@ -18,6 +19,7 @@ interface LeagueState {
   results: Match[];
   schedule: Match[];
   standings: Record<string, TeamRow[]>;
+  overall: ApiOverallRow[];
   players: Player[];
   squad: SquadPlayer[];
   teams: ApiTeam[];
@@ -59,6 +61,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
         results: [],
         schedule: [],
         standings: {},
+        overall: [],
         players: [],
         squad: [],
         teams: [],
@@ -98,6 +101,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
       results,
       schedule,
       standings,
+      overall: data.overall ?? [],
       players: toPlayers(data.players, data.matches),
       squad: data.squad ?? [],
       teams: data.teams ?? [],
