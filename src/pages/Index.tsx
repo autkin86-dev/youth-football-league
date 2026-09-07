@@ -61,14 +61,7 @@ const Index = () => {
               {renderSection()}
             </div>
           ) : (
-            <>
-              <HeroBoard onOpenProtocol={setProtocol} />
-              <StandingsSection />
-              <ScheduleSection />
-              <ResultsSection onOpenProtocol={setProtocol} />
-              <TeamsSection />
-              <PlayersSection />
-            </>
+            <HeroBoard onOpenProtocol={setProtocol} />
           )}
         </main>
         <SiteFooter />
