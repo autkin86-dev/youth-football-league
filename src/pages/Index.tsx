@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SiteHeader, { SECTION_LINKS } from '@/components/SiteHeader';
 import HeroBoard from '@/components/HeroBoard';
+import AboutSection from '@/components/AboutSection';
 import OverallStandingsSection from '@/components/OverallStandingsSection';
 import StandingsSection from '@/components/StandingsSection';
 import ScheduleSection from '@/components/ScheduleSection';
@@ -66,6 +67,7 @@ const Index = () => {
           ) : (
             <>
               <HeroBoard onOpenProtocol={setProtocol} />
+              <AboutSection />
               <OverallStandingsSection />
             </>
           )}

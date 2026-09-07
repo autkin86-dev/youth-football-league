@@ -11,12 +11,10 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
   const { results, standings, nextMatch } = useLeague();
   const NEXT_MATCH = nextMatch;
 
-  if (!NEXT_MATCH) return null;
-
-  const groupResults = results.filter((m) => m.group === NEXT_MATCH.group);
+  const groupResults = NEXT_MATCH ? results.filter((m) => m.group === NEXT_MATCH.group) : [];
   const groupLastRound = groupResults[0]?.round ?? 0;
   const round6 = groupResults.filter((m) => m.round === groupLastRound).slice(0, 4);
-  const table = standings[NEXT_MATCH.group] ?? [];
+  const table = NEXT_MATCH ? standings[NEXT_MATCH.group] ?? [] : [];
 
   const topScorer = round6
     .flatMap((m) => m.goals ?? [])
@@ -30,16 +28,31 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
     <section className="grid gap-[18px] py-[18px] lg:grid-cols-[1fr_1fr_352px] lg:grid-rows-[minmax(320px,1fr)_214px]">
       {/* Ближайший матч */}
       <article className="glow-pitch animate-rise relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden rounded-[var(--radius)] px-6 py-12 text-center lg:col-span-2">
-        <p className="eyebrow relative z-10">Ближайший матч · {NEXT_MATCH.round} тур</p>
-        <h1 className="relative z-10 mt-4 font-head text-[2rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[2.6rem] lg:text-[2.9rem]">
-          {NEXT_MATCH.home} <span className="font-medium text-muted-foreground">—</span> {NEXT_MATCH.away}
-        </h1>
-        <p className="relative z-10 mt-3.5 text-[0.98rem] text-muted-foreground">
-          <b className="font-semibold text-foreground">
-            {NEXT_MATCH.date}, {NEXT_MATCH.time}
-          </b>{' '}
-          · {NEXT_MATCH.venue}
-        </p>
+        <h1 className="sr-only">Первенство САО по футболу</h1>
+        {NEXT_MATCH ? (
+          <>
+            <p className="eyebrow relative z-10">Ближайший матч · {NEXT_MATCH.round} тур</p>
+            <h2 className="relative z-10 mt-4 font-head text-[2rem] font-bold leading-[1.06] tracking-[-0.035em] sm:text-[2.6rem] lg:text-[2.9rem]">
+              {NEXT_MATCH.home} <span className="font-medium text-muted-foreground">—</span> {NEXT_MATCH.away}
+            </h2>
+            <p className="relative z-10 mt-3.5 text-[0.98rem] text-muted-foreground">
+              <b className="font-semibold text-foreground">
+                {NEXT_MATCH.date}, {NEXT_MATCH.time}
+              </b>{' '}
+              · {NEXT_MATCH.venue}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="eyebrow relative z-10">Первенство САО по футболу</p>
+            <h2 className="relative z-10 mt-4 font-head text-[1.7rem] font-bold leading-[1.15] tracking-[-0.03em] sm:text-[2.1rem]">
+              Турнир детско-юношеских команд Северного округа Москвы
+            </h2>
+            <p className="relative z-10 mt-3.5 text-[0.98rem] text-muted-foreground">
+              Расписание ближайших матчей уточняется
+            </p>
+          </>
+        )}
         <span
           className="ball-glow animate-float pointer-events-none absolute bottom-[-140px] left-1/2 z-0 h-[250px] w-[250px] -translate-x-1/2 rounded-full opacity-90 blur-[0.4px]"
           aria-hidden="true"
