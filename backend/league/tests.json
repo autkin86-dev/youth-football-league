@@ -46,6 +46,20 @@
       "path": "/?action=save_match",
       "body": {"id": 1, "home_goals": 1, "away_goals": 1},
       "expectedStatus": 403
+    },
+    {
+      "name": "Заявка на перенос без входа тренера запрещена",
+      "method": "POST",
+      "path": "/?action=reschedule_request",
+      "body": {"match_id": 1, "new_date": "2026-09-20"},
+      "expectedStatus": 403
+    },
+    {
+      "name": "Смена статуса переноса без прав админа",
+      "method": "POST",
+      "path": "/?action=reschedule_status",
+      "body": {"id": 1, "status": "approved"},
+      "expectedStatus": 403
     }
   ]
 }

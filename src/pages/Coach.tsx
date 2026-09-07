@@ -6,7 +6,16 @@ import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { SEASON } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
-import { coachLogin, removePlayer, savePlayer, type CoachSession, type SquadPlayer } from '@/lib/league-api';
+import {
+  coachLogin,
+  fetchCoachReschedules,
+  removePlayer,
+  requestReschedule,
+  savePlayer,
+  type CoachSession,
+  type RescheduleRequest,
+  type SquadPlayer,
+} from '@/lib/league-api';
 import { teamSlug } from '@/pages/Team';
 
 const POSITIONS = ['Вратарь', 'Защитник', 'Полузащитник', 'Нападающий'];
@@ -80,9 +89,15 @@ const CoachLogin = ({ onSuccess }: { onSuccess: (s: CoachSession) => void }) => 
   );
 };
 
+const RESCHEDULE_STATUS = {
+  new: { label: 'На рассмотрении', cls: 'bg-secondary text-muted-foreground' },
+  approved: { label: 'Подтверждён', cls: 'bg-win/15 text-win' },
+  rejected: { label: 'Отклонён', cls: 'bg-accent/15 text-accent' },
+} as const;
+
 const Coach = () => {
   const [session, setSession] = useState<CoachSession | null>(null);
-  const { squad, applyData, reload } = useLeague();
+  const { squad, raw, applyData, reload } = useLeague();
 
   const [editing, setEditing] = useState<SquadPlayer | null>(null);
   const [name, setName] = useState('');
@@ -90,6 +105,16 @@ const Coach = () => {
   const [position, setPosition] = useState(POSITIONS[2]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const [reschedules, setReschedules] = useState<RescheduleRequest[]>([]);
+  const [reschedLoading, setReschedLoading] = useState(true);
+  const [matchId, setMatchId] = useState('');
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [reschedBusy, setReschedBusy] = useState(false);
+  const [reschedError, setReschedError] = useState('');
+  const [reschedSent, setReschedSent] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE);
@@ -102,9 +127,48 @@ const Coach = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    fetchCoachReschedules(session.token)
+      .then(setReschedules)
+      .catch(() => {})
+      .finally(() => setReschedLoading(false));
+  }, [session]);
+
   if (!session) return <CoachLogin onSuccess={setSession} />;
 
   const players = squad.filter((p) => p.team === session.team).sort((a, b) => a.number - b.number);
+
+  const upcomingMatches = raw
+    .filter((m) => !m.played && (m.home_team === session.team || m.away_team === session.team))
+    .sort((a, b) => a.round - b.round);
+
+  const submitReschedule = async () => {
+    setReschedError('');
+    if (!matchId) return setReschedError('Выберите матч');
+    if (newDate.trim().length < 3) return setReschedError('Укажите желаемую дату');
+    setReschedBusy(true);
+    try {
+      setReschedules(
+        await requestReschedule(session.token, {
+          match_id: Number(matchId),
+          new_date: newDate.trim(),
+          new_time: newTime.trim(),
+          reason: reason.trim(),
+        }),
+      );
+      setMatchId('');
+      setNewDate('');
+      setNewTime('');
+      setReason('');
+      setReschedSent(true);
+      setTimeout(() => setReschedSent(false), 2500);
+    } catch (e) {
+      setReschedError(e instanceof Error ? e.message : 'Не удалось отправить заявку');
+    } finally {
+      setReschedBusy(false);
+    }
+  };
 
   const reset = () => {
     setEditing(null);
@@ -289,6 +353,105 @@ const Coach = () => {
             </div>
           </div>
         </div>
+
+        <section className="mt-10">
+          <h2 className="font-head text-[1.7rem] font-bold tracking-[-0.03em]">Перенос матча</h2>
+          <p className="mt-2 text-[0.88rem] text-muted-foreground">
+            Отправьте заявку на перенос — судейский комитет подтвердит или отклонит её в админке.
+          </p>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_340px]">
+            <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card">
+              {reschedules.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4">
+                  <div>
+                    <p className="text-[0.9rem] font-medium">
+                      {r.old_date}
+                      {r.old_time ? `, ${r.old_time}` : ''}
+                      <Icon name="ArrowRight" size={13} className="mx-2 inline text-muted-foreground" />
+                      {r.new_date}
+                      {r.new_time ? `, ${r.new_time}` : ''}
+                    </p>
+                    {r.reason && (
+                      <p className="mt-1 text-[0.8rem] text-muted-foreground">{r.reason}</p>
+                    )}
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-3 py-1 text-[0.76rem] font-semibold',
+                      RESCHEDULE_STATUS[r.status].cls,
+                    )}
+                  >
+                    {RESCHEDULE_STATUS[r.status].label}
+                  </span>
+                </li>
+              ))}
+              {!reschedules.length && (
+                <li className="px-5 py-8 text-center text-[0.9rem] text-muted-foreground">
+                  {reschedLoading ? 'Загружаю…' : 'Заявок на перенос ещё не было'}
+                </li>
+              )}
+            </ul>
+
+            <div className="h-fit rounded-[var(--radius)] bg-card p-5">
+              <p className="eyebrow">Новая заявка</p>
+
+              <label className="eyebrow mb-2 mt-4 block">Матч</label>
+              <select
+                value={matchId}
+                onChange={(e) => setMatchId(e.target.value)}
+                className="h-10 w-full rounded-lg border border-border bg-secondary/60 px-3 text-[0.88rem] text-foreground"
+              >
+                <option value="">Выберите матч</option>
+                {upcomingMatches.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.round} тур · {m.home_team} — {m.away_team} · {m.match_date}
+                  </option>
+                ))}
+              </select>
+
+              <label className="eyebrow mb-2 mt-4 block">Желаемая дата</label>
+              <Input
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                placeholder="сб, 27 сентября"
+                className="bg-secondary/60"
+              />
+
+              <label className="eyebrow mb-2 mt-4 block">Время</label>
+              <Input
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                placeholder="12:00"
+                className="bg-secondary/60"
+              />
+
+              <label className="eyebrow mb-2 mt-4 block">Причина</label>
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Например, несколько игроков болеют"
+                className="bg-secondary/60"
+              />
+
+              {reschedError && <p className="mt-3 text-[0.82rem] text-accent">{reschedError}</p>}
+              {reschedSent && <p className="mt-3 text-[0.82rem] text-win">Заявка отправлена</p>}
+
+              <Button
+                onClick={submitReschedule}
+                disabled={reschedBusy || !upcomingMatches.length}
+                className="mt-5 w-full rounded-full"
+              >
+                {reschedBusy ? 'Отправляю…' : 'Отправить заявку'}
+              </Button>
+              {!upcomingMatches.length && (
+                <p className="mt-3 text-[0.78rem] text-muted-foreground">
+                  У вашей команды нет предстоящих матчей
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

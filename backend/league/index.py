@@ -203,9 +203,24 @@ def handler(event: dict, context) -> dict:
             coaches = [dict(r) for r in cur.fetchall()]
             cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
             rows = [dict(r) for r in cur.fetchall()]
+            cur.execute('SELECT * FROM reschedule_requests ORDER BY created_at DESC')
+            reschedules = [dict(r) for r in cur.fetchall()]
             cur.close()
             c.close()
-            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'applications': rows, 'coaches': coaches}, ensure_ascii=False, default=str)}
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps(
+                {'applications': rows, 'coaches': coaches, 'reschedules': reschedules}, ensure_ascii=False, default=str
+            )}
+        if action == 'coach_reschedules':
+            acc = coach_by_token(cur, event)
+            if not acc:
+                cur.close()
+                c.close()
+                return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход'}, ensure_ascii=False)}
+            cur.execute(f"SELECT * FROM reschedule_requests WHERE team='{esc(acc['team'])}' ORDER BY created_at DESC")
+            rows = [dict(r) for r in cur.fetchall()]
+            cur.close()
+            c.close()
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'reschedules': rows}, ensure_ascii=False, default=str)}
         data = load_all(cur)
         cur.close()
         c.close()
@@ -305,11 +320,71 @@ def handler(event: dict, context) -> dict:
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
 
+    if action == 'reschedule_request' and not is_admin(event):
+        c = conn()
+        cur = c.cursor(cursor_factory=RealDictCursor)
+        acc = coach_by_token(cur, event)
+        if not acc:
+            cur.close()
+            c.close()
+            return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход'}, ensure_ascii=False)}
+
+        mid = body.get('match_id')
+        new_date = str(body.get('new_date', '')).strip()
+        if not mid or len(new_date) < 3:
+            cur.close()
+            c.close()
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите новую дату'}, ensure_ascii=False)}
+
+        cur.execute(f'SELECT * FROM matches WHERE id={int(mid)}')
+        match = cur.fetchone()
+        if not match or match['home_team'] != acc['team'] and match['away_team'] != acc['team']:
+            cur.close()
+            c.close()
+            return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Это не матч вашей команды'}, ensure_ascii=False)}
+
+        cur.execute(
+            "INSERT INTO reschedule_requests (match_id, team, coach_name, old_date, old_time, new_date, new_time, reason) VALUES "
+            f"({int(mid)}, '{esc(acc['team'])}', '{esc(acc.get('coach_name', ''))}', '{esc(match['match_date'])}', "
+            f"'{esc(match['match_time'])}', '{esc(new_date)}', '{esc(body.get('new_time', ''))}', "
+            f"'{esc(str(body.get('reason', ''))[:500])}') RETURNING id"
+        )
+        new_id = cur.fetchone()['id']
+        c.commit()
+        cur.execute(f"SELECT * FROM reschedule_requests WHERE team='{esc(acc['team'])}' ORDER BY created_at DESC")
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, 'id': new_id, 'reschedules': rows}, ensure_ascii=False, default=str)}
+
     if not is_admin(event):
         return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
 
     c = conn()
     cur = c.cursor(cursor_factory=RealDictCursor)
+
+    if action == 'reschedule_status':
+        status = str(body.get('status', 'new'))
+        if status not in ('new', 'approved', 'rejected'):
+            status = 'new'
+        rid = int(body.get('id'))
+        cur.execute(f"UPDATE reschedule_requests SET status='{esc(status)}' WHERE id={rid}")
+
+        if status == 'approved':
+            cur.execute(f'SELECT * FROM reschedule_requests WHERE id={rid}')
+            req = cur.fetchone()
+            if req:
+                cur.execute(
+                    f"UPDATE matches SET match_date='{esc(req['new_date'])}', "
+                    f"match_time='{esc(req['new_time'])}', updated_at=NOW() WHERE id={int(req['match_id'])}"
+                )
+        c.commit()
+        cur.execute('SELECT * FROM reschedule_requests ORDER BY created_at DESC')
+        rows = [dict(r) for r in cur.fetchall()]
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'reschedules': rows, **data}, ensure_ascii=False, default=str)}
 
     if action == 'save_coach':
         login = str(body.get('login', '')).strip().lower()

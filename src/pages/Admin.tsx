@@ -8,6 +8,7 @@ import ApplicationsList from '@/components/admin/ApplicationsList';
 import SquadEditor from '@/components/admin/SquadEditor';
 import TeamsEditor from '@/components/admin/TeamsEditor';
 import CoachAccounts from '@/components/admin/CoachAccounts';
+import ReschedulesList from '@/components/admin/ReschedulesList';
 import { useLeague } from '@/context/LeagueContext';
 import type { ApiMatch } from '@/lib/league-api';
 import { downloadProtocolDoc, downloadProtocolsDoc } from '@/lib/protocol-doc';
@@ -235,6 +236,8 @@ const Admin = () => {
             <SquadEditor token={token} />
 
             <CoachAccounts token={token} />
+
+            <ReschedulesList token={token} />
 
             <ApplicationsList token={token} />
           </>

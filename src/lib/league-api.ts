@@ -190,6 +190,68 @@ export const savePlayer = async (
   return data;
 };
 
+export interface RescheduleRequest {
+  id: number;
+  match_id: number;
+  team: string;
+  coach_name: string;
+  old_date: string;
+  old_time: string;
+  new_date: string;
+  new_time: string;
+  reason: string;
+  status: 'new' | 'approved' | 'rejected';
+  created_at: string;
+}
+
+export const requestReschedule = async (
+  token: string,
+  payload: { match_id: number; new_date: string; new_time?: string; reason?: string },
+): Promise<RescheduleRequest[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=reschedule_request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось отправить заявку');
+  return data.reschedules as RescheduleRequest[];
+};
+
+export const fetchCoachReschedules = async (token: string): Promise<RescheduleRequest[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=coach_reschedules`, {
+    headers: { 'X-Auth-Token': token },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить');
+  return (data.reschedules ?? []) as RescheduleRequest[];
+};
+
+export const fetchAllReschedules = async (token: string): Promise<RescheduleRequest[]> => {
+  const res = await fetch(`${LEAGUE_API}?action=applications`, {
+    headers: { 'X-Auth-Token': token },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить');
+  return (data.reschedules ?? []) as RescheduleRequest[];
+};
+
+export const setRescheduleStatus = async (
+  token: string,
+  id: number,
+  status: RescheduleRequest['status'],
+): Promise<{ reschedules: RescheduleRequest[]; data: LeagueData }> => {
+  const res = await fetch(`${LEAGUE_API}?action=reschedule_status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id, status }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось обновить');
+  const { reschedules, ...rest } = data;
+  return { reschedules, data: rest as LeagueData };
+};
+
 export const removePlayer = async (token: string, id: number): Promise<LeagueData> => {
   const res = await fetch(`${LEAGUE_API}?action=remove_player`, {
     method: 'POST',
