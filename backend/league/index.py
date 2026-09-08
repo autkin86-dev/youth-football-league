@@ -54,9 +54,9 @@ def conn():
 def load_all(cur):
     cur.execute('SELECT * FROM matches WHERE active = TRUE ORDER BY round DESC, id ASC')
     matches = [dict(r) for r in cur.fetchall()]
-    cur.execute('SELECT * FROM match_goals ORDER BY minute ASC')
+    cur.execute('SELECT * FROM match_goals WHERE active = TRUE ORDER BY minute ASC')
     goals = [dict(r) for r in cur.fetchall()]
-    cur.execute('SELECT * FROM match_cards ORDER BY minute ASC')
+    cur.execute('SELECT * FROM match_cards WHERE active = TRUE ORDER BY minute ASC')
     cards = [dict(r) for r in cur.fetchall()]
 
     by_id = {}

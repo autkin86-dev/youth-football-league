@@ -13,7 +13,11 @@ const SORTS: { id: SortKey; label: string }[] = [
   { id: 'yellow', label: 'Карточки' },
 ];
 
-const PlayersSection = () => {
+interface Props {
+  fixedGroup?: AgeGroup;
+}
+
+const PlayersSection = ({ fixedGroup }: Props) => {
   const [sort, setSort] = useState<SortKey>('goals');
   const [query, setQuery] = useState('');
   const { players: source } = useLeague();
@@ -24,19 +28,22 @@ const PlayersSection = () => {
   );
   const [group, setGroup] = useState<AgeGroup | ''>('');
   useEffect(() => {
+    if (fixedGroup) return;
     if (groupsWithPlayers.length && !groupsWithPlayers.some((g) => g.id === group)) {
       setGroup(groupsWithPlayers[0].id);
     }
-  }, [groupsWithPlayers, group]);
+  }, [groupsWithPlayers, group, fixedGroup]);
+
+  const activeGroup = fixedGroup ?? group;
 
   const players = useMemo(() => {
     const q = query.trim().toLowerCase();
     return source
-      .filter((p) => p.group === group)
+      .filter((p) => p.group === activeGroup)
       .filter((p) => !q || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))
       .sort((a, b) => b[sort] - a[sort] || b.goals - a.goals)
       .slice(0, 12);
-  }, [sort, query, source, group]);
+  }, [sort, query, source, activeGroup]);
 
   const top = players[0];
 
@@ -50,20 +57,21 @@ const PlayersSection = () => {
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {groupsWithPlayers.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGroup(g.id)}
-              className={cn(
-                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                group === g.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {g.short}
-            </button>
-          ))}
+          {!fixedGroup &&
+            groupsWithPlayers.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setGroup(g.id)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+                  group === g.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {g.short}
+              </button>
+            ))}
           {SORTS.map((s) => (
             <button
               key={s.id}

@@ -4,7 +4,11 @@ import { cn } from '@/lib/utils';
 import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
-const ScheduleSection = () => {
+interface Props {
+  fixedGroup?: AgeGroup;
+}
+
+const ScheduleSection = ({ fixedGroup }: Props) => {
   const { schedule } = useLeague();
 
   const groupsWithMatches = useMemo(
@@ -13,14 +17,17 @@ const ScheduleSection = () => {
   );
   const [group, setGroup] = useState<AgeGroup | ''>('');
   useEffect(() => {
+    if (fixedGroup) return;
     if (groupsWithMatches.length && !groupsWithMatches.some((g) => g.id === group)) {
       setGroup(groupsWithMatches[0].id);
     }
-  }, [groupsWithMatches, group]);
+  }, [groupsWithMatches, group, fixedGroup]);
+
+  const activeGroup = fixedGroup ?? group;
 
   const groupSchedule = useMemo(
-    () => schedule.filter((m) => m.group === group),
-    [schedule, group],
+    () => schedule.filter((m) => m.group === activeGroup),
+    [schedule, activeGroup],
   );
   const rounds = useMemo(
     () => Array.from(new Set(groupSchedule.map((m) => m.round))).sort((a, b) => a - b),
@@ -43,22 +50,24 @@ const ScheduleSection = () => {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {groupsWithMatches.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => setGroup(g.id)}
-            className={cn(
-              'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-              group === g.id
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {g.short}
-          </button>
-        ))}
-      </div>
+      {!fixedGroup && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {groupsWithMatches.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGroup(g.id)}
+              className={cn(
+                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+                group === g.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {g.short}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {rounds.map((r) => (

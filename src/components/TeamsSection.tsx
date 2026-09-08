@@ -6,7 +6,11 @@ import { cn } from '@/lib/utils';
 import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 
-const TeamsSection = () => {
+interface Props {
+  fixedGroup?: AgeGroup;
+}
+
+const TeamsSection = ({ fixedGroup }: Props) => {
   const { squad: allSquad, teams: apiTeams } = useLeague();
 
   const groupsWithTeams = useMemo(
@@ -16,14 +20,17 @@ const TeamsSection = () => {
 
   const [group, setGroup] = useState<AgeGroup | ''>('');
   useEffect(() => {
+    if (fixedGroup) return;
     if (groupsWithTeams.length && !groupsWithTeams.some((g) => g.id === group)) {
       setGroup(groupsWithTeams[0].id);
     }
-  }, [groupsWithTeams, group]);
+  }, [groupsWithTeams, group, fixedGroup]);
+
+  const activeGroup = fixedGroup ?? group;
 
   const teams = useMemo(
-    () => apiTeams.filter((t) => t.age_group === group),
-    [apiTeams, group],
+    () => apiTeams.filter((t) => t.age_group === activeGroup),
+    [apiTeams, activeGroup],
   );
 
   const [active, setActive] = useState<number | null>(null);
@@ -47,22 +54,24 @@ const TeamsSection = () => {
             Команды и составы
           </h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {groupsWithTeams.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGroup(g.id)}
-              className={cn(
-                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                group === g.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {g.short}
-            </button>
-          ))}
-        </div>
+        {!fixedGroup && (
+          <div className="flex flex-wrap gap-2">
+            {groupsWithTeams.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setGroup(g.id)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+                  group === g.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {g.short}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {!team ? (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SiteHeader, { SECTION_LINKS } from '@/components/SiteHeader';
 import HeroBoard from '@/components/HeroBoard';
+import AgeGroupCards from '@/components/AgeGroupCards';
 import AboutSection from '@/components/AboutSection';
 import OverallStandingsSection from '@/components/OverallStandingsSection';
 import StandingsSection from '@/components/StandingsSection';
@@ -67,6 +68,7 @@ const Index = () => {
           ) : (
             <>
               <HeroBoard onOpenProtocol={setProtocol} />
+              <AgeGroupCards />
               <AboutSection />
               <div className="hidden lg:block">
                 <OverallStandingsSection />

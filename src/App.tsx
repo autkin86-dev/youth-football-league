@@ -11,6 +11,7 @@ import { LeagueProvider } from "@/context/LeagueContext";
 const Admin = lazy(() => import("./pages/Admin"));
 const Team = lazy(() => import("./pages/Team"));
 const Coach = lazy(() => import("./pages/Coach"));
+const AgeGroupPage = lazy(() => import("./pages/AgeGroupPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="/team/:slug" element={<Team />} />
               <Route path="/coach" element={<Coach />} />
+              <Route path="/:ageSlug" element={<AgeGroupPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

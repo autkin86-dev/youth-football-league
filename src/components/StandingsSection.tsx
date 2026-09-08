@@ -12,10 +12,15 @@ const FORM_STYLE = {
   L: 'bg-accent/15 text-accent',
 } as const;
 
-const StandingsSection = () => {
+interface Props {
+  fixedGroup?: AgeGroup;
+}
+
+const StandingsSection = ({ fixedGroup }: Props) => {
   const [group, setGroup] = useState<AgeGroup>(AGE_GROUPS[0].id);
+  const activeGroup = fixedGroup ?? group;
   const { standings } = useLeague();
-  const rows = standings[group] ?? [];
+  const rows = standings[activeGroup] ?? [];
 
   return (
     <section id="tablo" className="scroll-mt-24 py-14">
@@ -26,22 +31,24 @@ const StandingsSection = () => {
             Турнирная таблица
           </h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {AGE_GROUPS.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGroup(g.id)}
-              className={cn(
-                'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
-                group === g.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {g.short}
-            </button>
-          ))}
-        </div>
+        {!fixedGroup && (
+          <div className="flex flex-wrap gap-2">
+            {AGE_GROUPS.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setGroup(g.id)}
+                className={cn(
+                  'rounded-full px-4 py-2 text-[0.85rem] font-semibold transition-colors',
+                  group === g.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {g.short}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <ul className="flex flex-col gap-2 lg:hidden">
@@ -57,7 +64,7 @@ const StandingsSection = () => {
                 {r.pos}
               </span>
               <Link
-                to={`/team/${teamSlug(r.team, group)}`}
+                to={`/team/${teamSlug(r.team, activeGroup)}`}
                 className={cn('min-w-0 flex-1 truncate text-[1rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
               >
                 {r.team}
@@ -141,7 +148,7 @@ const StandingsSection = () => {
                   </span>
                 </td>
                 <td className={cn('px-2 py-3 font-medium', r.pos === 1 && 'font-bold')}>
-                  <Link to={`/team/${teamSlug(r.team, group)}`} className="story-link hover:text-foreground">
+                  <Link to={`/team/${teamSlug(r.team, activeGroup)}`} className="story-link hover:text-foreground">
                     {r.team}
                   </Link>
                 </td>
