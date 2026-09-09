@@ -13,14 +13,14 @@ const StatsBar = () => {
   ];
 
   return (
-    <section className="grid grid-cols-4 gap-2.5 py-2 sm:gap-3">
+    <section className="grid grid-cols-4 gap-2.5 py-2 sm:gap-3 lg:gap-4">
       {stats.map((s) => (
         <div
           key={s.label}
-          className="flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius)] bg-card py-4 text-center"
+          className="flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius)] bg-card py-4 text-center lg:py-6"
         >
-          <span className="tabnum font-head text-[1.5rem] font-bold sm:text-[1.7rem]">{s.value}</span>
-          <span className="text-[0.7rem] text-muted-foreground sm:text-[0.78rem]">{s.label}</span>
+          <span className="tabnum font-head text-[1.5rem] font-bold sm:text-[1.7rem] lg:text-[2.1rem]">{s.value}</span>
+          <span className="text-[0.7rem] text-muted-foreground sm:text-[0.78rem] lg:text-[0.86rem]">{s.label}</span>
         </div>
       ))}
     </section>

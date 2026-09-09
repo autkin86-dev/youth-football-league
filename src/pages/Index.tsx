@@ -98,6 +98,9 @@ const Index = () => {
               </div>
 
               <HeroBoard onOpenProtocol={setProtocol} />
+              <div className="hidden lg:block">
+                <StatsBar />
+              </div>
               <AgeGroupCards />
               <div className="hidden lg:block">
                 <AboutSection />
