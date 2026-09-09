@@ -66,7 +66,7 @@ const SiteFooter = () => (
         </ul>
 
         <a
-          href="https://t.me/ChampionSAO"
+          href="https://sao.mossport.ru/"
           target="_blank"
           rel="noreferrer"
           className="mt-4 inline-flex items-center gap-3 rounded-[var(--radius)] bg-card p-3 transition-colors hover:bg-secondary/70"
@@ -77,9 +77,9 @@ const SiteFooter = () => (
             className="h-16 w-16 shrink-0 rounded-md bg-white p-1"
           />
           <span className="text-[0.8rem] leading-snug text-muted-foreground">
-            Отсканируйте QR-код,
+            Отсканируйте QR-код —
             <br />
-            чтобы перейти в наш Telegram
+            сайт «Мосгорспорт» САО
           </span>
         </a>
       </div>
