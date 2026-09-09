@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import SiteHeader, { SECTION_LINKS } from '@/components/SiteHeader';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import HeroBoard from '@/components/HeroBoard';
+import MatchStatusCard from '@/components/MatchStatusCard';
+import StatsBar from '@/components/StatsBar';
+import StandingsPreview from '@/components/StandingsPreview';
 import AgeGroupCards from '@/components/AgeGroupCards';
 import AboutSection from '@/components/AboutSection';
 import OverallStandingsSection from '@/components/OverallStandingsSection';
@@ -16,12 +19,14 @@ import MatchProtocolDialog from '@/components/MatchProtocolDialog';
 import DeclareTeamDialog from '@/components/DeclareTeamDialog';
 import Icon from '@/components/ui/icon';
 import type { Match } from '@/data/league';
+import { useLeague } from '@/context/LeagueContext';
 
 const Index = () => {
   const [protocol, setProtocol] = useState<Match | null>(null);
   const [declare, setDeclare] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const section = searchParams.get('s');
+  const { nextMatch } = useLeague();
 
   const goSection = (id: string | null) => {
     if (id) setSearchParams({ s: id });
@@ -68,6 +73,30 @@ const Index = () => {
             </div>
           ) : (
             <>
+              <h1 className="sr-only">Первенство САО по футболу</h1>
+
+              <div className="flex flex-col gap-4 py-4 lg:hidden">
+                {nextMatch ? (
+                  <MatchStatusCard
+                    match={nextMatch}
+                    onOpenProtocol={setProtocol}
+                    onViewAll={() => goSection('rezultaty')}
+                  />
+                ) : (
+                  <article className="glow-pitch animate-rise flex min-h-[220px] flex-col items-center justify-center rounded-[var(--radius)] px-6 py-10 text-center">
+                    <p className="eyebrow">Первенство САО по футболу</p>
+                    <p className="mt-3 font-head text-[1.4rem] font-bold leading-[1.15]">
+                      Турнир детско-юношеских команд Северного округа Москвы
+                    </p>
+                    <p className="mt-2 text-[0.9rem] text-muted-foreground">
+                      Расписание ближайших матчей уточняется
+                    </p>
+                  </article>
+                )}
+                <StatsBar />
+                <StandingsPreview />
+              </div>
+
               <HeroBoard onOpenProtocol={setProtocol} />
               <AgeGroupCards />
               <AboutSection />

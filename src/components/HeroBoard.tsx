@@ -25,10 +25,9 @@ const HeroBoard = ({ onOpenProtocol }: Props) => {
   const [bestName, bestGoals] = Object.entries(topScorer).sort((a, b) => b[1] - a[1])[0] ?? ['—', 0];
 
   return (
-    <section className="grid gap-[18px] py-[18px] lg:grid-cols-[1fr_1fr_352px] lg:grid-rows-[minmax(320px,1fr)_214px]">
+    <section className="hidden gap-[18px] py-[18px] lg:grid lg:grid-cols-[1fr_1fr_352px] lg:grid-rows-[minmax(320px,1fr)_214px]">
       {/* Ближайший матч */}
       <article className="glow-pitch animate-rise relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden rounded-[var(--radius)] px-6 py-12 text-center lg:col-span-2">
-        <h1 className="sr-only">Первенство САО по футболу</h1>
         {NEXT_MATCH ? (
           <>
             <p className="eyebrow relative z-10">Ближайший матч · {NEXT_MATCH.round} тур</p>
