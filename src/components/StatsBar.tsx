@@ -19,8 +19,8 @@ const StatsBar = () => {
           key={s.label}
           className="flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius)] bg-card py-4 text-center"
         >
-          <span className="tabnum font-head text-[1.5rem] font-bold sm:text-[1.7rem]">{s.value}</span>
-          <span className="text-[0.7rem] text-muted-foreground sm:text-[0.78rem]">{s.label}</span>
+          <span className="tabnum font-head text-[1.3rem] font-bold sm:text-[1.7rem]">{s.value}</span>
+          <span className="text-[0.62rem] text-muted-foreground sm:text-[0.78rem]">{s.label}</span>
         </div>
       ))}
     </section>
