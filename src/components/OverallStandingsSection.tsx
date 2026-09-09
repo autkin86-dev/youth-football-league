@@ -4,6 +4,9 @@ import { teamSlug } from '@/pages/Team';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
+import StickyTable from '@/components/StickyTable';
+import TeamBadge from '@/components/TeamBadge';
+import type { ApiOverallRow } from '@/lib/league-api';
 
 const OVERALL_GROUPS = ['2011-2012', '2013-2014', '2015-2016', '2017-2018'];
 
@@ -30,49 +33,53 @@ const OverallStandingsSection = () => {
         </p>
       </div>
 
-      <ul className="flex flex-col gap-2 lg:hidden">
-        {overall.map((r) => {
-          const grp = groupOf(r.team);
-          return (
-            <li key={r.team} className="rounded-[var(--radius)] bg-card p-4">
-              <div className="flex items-center gap-3">
+      <div className="lg:hidden">
+        <StickyTable
+          rows={overall}
+          rowKey={(r) => r.team}
+          stickyHeader="Команда"
+          renderSticky={(r) => {
+            const grp = groupOf(r.team);
+            return (
+              <div className="flex min-w-[168px] items-center gap-2">
                 <span
                   className={cn(
-                    'tabnum grid h-7 w-7 shrink-0 place-items-center rounded-md text-[0.85rem] text-muted-foreground',
+                    'tabnum grid h-5 w-5 shrink-0 place-items-center rounded text-[0.72rem] text-muted-foreground',
                     r.pos <= 3 && 'bg-accent/15 font-bold text-accent',
                   )}
                 >
                   {r.pos}
                 </span>
+                <TeamBadge name={r.team} size={22} />
                 {grp ? (
                   <Link
                     to={`/team/${teamSlug(r.team, grp)}`}
-                    className={cn('min-w-0 flex-1 truncate text-[1rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
+                    className={cn('min-w-0 flex-1 truncate text-[0.86rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
                   >
                     {r.team}
                   </Link>
                 ) : (
-                  <span className="min-w-0 flex-1 truncate text-[1rem] font-semibold">{r.team}</span>
+                  <span className="min-w-0 flex-1 truncate text-[0.86rem] font-semibold">{r.team}</span>
                 )}
-                <span className="tabnum shrink-0 font-head text-[1.35rem] font-bold leading-none">
-                  {r.points}
-                </span>
               </div>
-
-              <div className="mt-3 grid grid-cols-4 gap-2 border-t border-border pt-3 text-center">
-                {OVERALL_GROUPS.map((g) => (
-                  <div key={g}>
-                    <p className="tabnum font-head text-[1.05rem] font-bold">{r.by_group[g] ?? '—'}</p>
-                    <p className="mt-0.5 text-[0.66rem] leading-tight text-muted-foreground">
-                      {AGE_GROUPS.find((ag) => ag.id === g)?.short ?? g}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+            );
+          }}
+          columns={[
+            ...OVERALL_GROUPS.map((g) => ({
+              key: g,
+              header: AGE_GROUPS.find((ag) => ag.id === g)?.short ?? g,
+              render: (r: ApiOverallRow) => (
+                <span className="text-muted-foreground">{r.by_group[g] ?? '—'}</span>
+              ),
+            })),
+            {
+              key: 'points',
+              header: 'Сумма',
+              render: (r) => <span className="font-head font-bold text-foreground">{r.points}</span>,
+            },
+          ]}
+        />
+      </div>
 
       <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card lg:block">
         <table className="w-full min-w-[720px] border-collapse">

@@ -5,6 +5,8 @@ import { teamSlug } from '@/pages/Team';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
+import StickyTable from '@/components/StickyTable';
+import type { SquadPlayer } from '@/lib/league-api';
 
 interface Props {
   fixedGroup?: AgeGroup;
@@ -153,31 +155,30 @@ const TeamsSection = ({ fixedGroup }: Props) => {
               </div>
             </div>
 
-            <ul className="mt-2 flex flex-col divide-y divide-border sm:hidden">
-              {squad.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 py-3">
-                  <span className="tabnum grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-[0.8rem] font-bold">
-                    {p.number}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[0.94rem] font-medium">{p.name}</span>
-                    <span className="block text-[0.76rem] text-muted-foreground">
-                      {p.position} · {p.games} игр
+            <div className="mt-2 sm:hidden">
+              <StickyTable
+                rows={squad}
+                rowKey={(p) => String(p.id)}
+                stickyHeader="Игрок"
+                emptyText="Состав пока не заполнен"
+                renderSticky={(p) => (
+                  <div className="flex min-w-[168px] items-center gap-2">
+                    <span className="tabnum grid h-6 w-6 shrink-0 place-items-center rounded bg-secondary text-[0.72rem] font-bold">
+                      {p.number}
                     </span>
-                  </span>
-                  <span className="shrink-0 text-right text-[0.78rem] text-muted-foreground">
-                    <b className="font-head text-[1.05rem] font-bold text-foreground">{p.goals}</b> гол
-                    <br />
-                    {p.assists} пас
-                  </span>
-                </li>
-              ))}
-              {!squad.length && (
-                <li className="py-8 text-center text-[0.85rem] text-muted-foreground">
-                  Состав пока не заполнен
-                </li>
-              )}
-            </ul>
+                    <div className="min-w-0">
+                      <p className="truncate text-[0.86rem] font-medium leading-tight">{p.name}</p>
+                      <p className="truncate text-[0.72rem] leading-tight text-muted-foreground">{p.position}</p>
+                    </div>
+                  </div>
+                )}
+                columns={[
+                  { key: 'games', header: 'И', render: (p) => <span className="text-muted-foreground">{p.games}</span> },
+                  { key: 'goals', header: 'Голы', render: (p) => <span className="font-head font-bold text-foreground">{p.goals}</span> },
+                  { key: 'assists', header: 'Пас', render: (p) => <span className="text-muted-foreground">{p.assists}</span> },
+                ]}
+              />
+            </div>
 
             <div className="hidden overflow-x-auto sm:block">
               <table className="mt-2 w-full min-w-[520px]">

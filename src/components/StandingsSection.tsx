@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { teamSlug } from '@/pages/Team';
 import { cn } from '@/lib/utils';
-import { AGE_GROUPS, goalDiff, type AgeGroup } from '@/data/league';
+import { AGE_GROUPS, goalDiff, type AgeGroup, type TeamRow } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
+import StickyTable from '@/components/StickyTable';
+import TeamBadge from '@/components/TeamBadge';
 
 const FORM_STYLE = {
   W: 'bg-win/20 text-win',
@@ -51,47 +53,61 @@ const StandingsSection = ({ fixedGroup }: Props) => {
         )}
       </div>
 
-      <ul className="flex flex-col gap-2 lg:hidden">
-        {rows.map((r) => (
-          <li key={r.team} className="rounded-[var(--radius)] bg-card p-4">
-            <div className="flex items-center gap-3">
+      <div className="lg:hidden">
+        <StickyTable
+          rows={rows}
+          rowKey={(r) => r.team}
+          stickyHeader="Команда"
+          emptyText="Матчей пока не сыграно"
+          renderSticky={(r) => (
+            <div className="flex min-w-[168px] items-center gap-2">
               <span
                 className={cn(
-                  'tabnum grid h-7 w-7 shrink-0 place-items-center rounded-md text-[0.85rem] text-muted-foreground',
+                  'tabnum grid h-5 w-5 shrink-0 place-items-center rounded text-[0.72rem] text-muted-foreground',
                   r.pos <= 3 && 'bg-accent/15 font-bold text-accent',
                 )}
               >
                 {r.pos}
               </span>
+              <TeamBadge name={r.team} size={22} />
               <Link
                 to={`/team/${teamSlug(r.team, activeGroup)}`}
-                className={cn('min-w-0 flex-1 truncate text-[1rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
+                className={cn('min-w-0 flex-1 truncate text-[0.86rem]', r.pos === 1 ? 'font-bold' : 'font-semibold')}
               >
                 {r.team}
               </Link>
-              <span className="tabnum shrink-0 font-head text-[1.35rem] font-bold leading-none">
-                {r.points}
-              </span>
             </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.82rem] text-muted-foreground">
-              <span>
-                <b className="font-semibold text-foreground">{r.played}</b> игр
-              </span>
-              <span>
-                <b className="font-semibold text-win">{r.win}</b> в ·{' '}
-                <b className="font-semibold text-foreground">{r.draw}</b> н ·{' '}
-                <b className="font-semibold text-accent">{r.loss}</b> п
-              </span>
-              <span className="tabnum">
-                {r.scored}–{r.missed}
-              </span>
-              <span className="tabnum">
-                {goalDiff(r) > 0 ? '+' : ''}
-                {goalDiff(r)}
-              </span>
-              {r.form.length > 0 && (
-                <span className="flex gap-1">
+          )}
+          columns={[
+            { key: 'played', header: 'И', render: (r) => <span className="text-muted-foreground">{r.played}</span> },
+            { key: 'win', header: 'В', render: (r) => <span className="text-win">{r.win}</span> },
+            { key: 'draw', header: 'Н', render: (r) => <span className="text-muted-foreground">{r.draw}</span> },
+            { key: 'loss', header: 'П', render: (r) => <span className="text-accent">{r.loss}</span> },
+            {
+              key: 'goals',
+              header: 'Мячи',
+              render: (r) => (
+                <span className="text-muted-foreground">
+                  {r.scored}–{r.missed}
+                </span>
+              ),
+            },
+            {
+              key: 'diff',
+              header: 'Р',
+              render: (r) => (
+                <span className="text-muted-foreground">
+                  {goalDiff(r) > 0 ? '+' : ''}
+                  {goalDiff(r)}
+                </span>
+              ),
+            },
+            { key: 'points', header: 'О', render: (r) => <span className="font-head font-bold text-foreground">{r.points}</span> },
+            {
+              key: 'form',
+              header: 'Форма',
+              render: (r) => (
+                <span className="flex justify-end gap-1">
                   {r.form.map((f, i) => (
                     <span
                       key={i}
@@ -104,16 +120,11 @@ const StandingsSection = ({ fixedGroup }: Props) => {
                     </span>
                   ))}
                 </span>
-              )}
-            </div>
-          </li>
-        ))}
-        {!rows.length && (
-          <li className="rounded-[var(--radius)] bg-card px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
-            Матчей пока не сыграно
-          </li>
-        )}
-      </ul>
+              ),
+            },
+          ]}
+        />
+      </div>
 
       <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card lg:block">
         <table className="w-full min-w-[720px] border-collapse">

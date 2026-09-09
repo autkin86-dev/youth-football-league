@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { AGE_GROUPS, SEASON, TEAMS, goalDiff } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import { useSeo } from '@/hooks/use-seo';
+import StickyTable from '@/components/StickyTable';
+import type { SquadPlayer } from '@/lib/league-api';
 
 const TRANSLIT: Record<string, string> = {
   а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i',
@@ -189,31 +191,44 @@ const Team = () => {
           <h2 className="mb-4 font-head text-[1.5rem] font-bold tracking-[-0.03em]">
             Состав · {players.length} игроков
           </h2>
-          <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-card sm:hidden">
-            {players.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="tabnum grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-[0.8rem] font-bold">
-                  {p.number}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[0.94rem] font-medium">{p.name}</span>
-                  <span className="block text-[0.76rem] text-muted-foreground">
-                    {p.position} · {p.games} игр · {p.yellow} жк / {p.red} кк
+          <div className="sm:hidden">
+            <StickyTable
+              rows={players}
+              rowKey={(p) => String(p.id)}
+              stickyHeader="Игрок"
+              emptyText="Состав пока не заполнен"
+              renderSticky={(p) => (
+                <div className="flex min-w-[168px] items-center gap-2">
+                  <span className="tabnum grid h-6 w-6 shrink-0 place-items-center rounded bg-secondary text-[0.72rem] font-bold">
+                    {p.number}
                   </span>
-                </span>
-                <span className="shrink-0 text-right text-[0.78rem] text-muted-foreground">
-                  <b className="font-head text-[1.05rem] font-bold text-foreground">{p.goals}</b> гол
-                  <br />
-                  {p.assists} пас
-                </span>
-              </li>
-            ))}
-            {!players.length && (
-              <li className="px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
-                Состав пока не заполнен
-              </li>
-            )}
-          </ul>
+                  <div className="min-w-0">
+                    <p className="truncate text-[0.86rem] font-medium leading-tight">{p.name}</p>
+                    <p className="truncate text-[0.72rem] leading-tight text-muted-foreground">{p.position}</p>
+                  </div>
+                </div>
+              )}
+              columns={[
+                { key: 'games', header: 'И', render: (p) => <span className="text-muted-foreground">{p.games}</span> },
+                { key: 'goals', header: 'Голы', render: (p) => <span className="font-head font-bold text-foreground">{p.goals}</span> },
+                { key: 'assists', header: 'Пас', render: (p) => <span className="text-muted-foreground">{p.assists}</span> },
+                {
+                  key: 'cards',
+                  header: 'Ж/К',
+                  render: (p) => (
+                    <span className="flex items-center justify-end gap-1.5">
+                      <span className="rounded-[3px] bg-yellow-400/20 px-1.5 text-[0.72rem] font-semibold text-yellow-400">
+                        {p.yellow}
+                      </span>
+                      <span className="rounded-[3px] bg-accent/20 px-1.5 text-[0.72rem] font-semibold text-accent">
+                        {p.red}
+                      </span>
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </div>
 
           <div className="hidden overflow-x-auto rounded-[var(--radius)] bg-card sm:block">
             <table className="w-full min-w-[560px]">
