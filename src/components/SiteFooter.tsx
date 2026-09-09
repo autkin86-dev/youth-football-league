@@ -64,6 +64,24 @@ const SiteFooter = () => (
             <Icon name="CalendarDays" size={14} /> {SEASON}
           </li>
         </ul>
+
+        <a
+          href="https://t.me/ChampionSAO"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex items-center gap-3 rounded-[var(--radius)] bg-card p-3 transition-colors hover:bg-secondary/70"
+        >
+          <img
+            src="https://cdn.poehali.dev/projects/ab649696-fb45-4286-b508-1788916ab2d6/bucket/5c699d2e-a8d4-406e-9f51-f2261abb917a.png"
+            alt="QR-код Мосгорспорт"
+            className="h-16 w-16 shrink-0 rounded-md bg-white p-1"
+          />
+          <span className="text-[0.8rem] leading-snug text-muted-foreground">
+            Отсканируйте QR-код,
+            <br />
+            чтобы перейти в наш Telegram
+          </span>
+        </a>
       </div>
     </div>
 
