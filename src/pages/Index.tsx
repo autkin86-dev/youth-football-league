@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import SiteHeader, { SECTION_LINKS } from '@/components/SiteHeader';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import HeroBoard from '@/components/HeroBoard';
 import AgeGroupCards from '@/components/AgeGroupCards';
 import AboutSection from '@/components/AboutSection';
@@ -51,7 +52,7 @@ const Index = () => {
 
   return (
     <div className="screen-vignette min-h-screen">
-      <div className="mx-auto w-full max-w-[1440px] px-5 md:px-8">
+      <div className="mx-auto w-full max-w-[1440px] px-5 pb-20 md:px-8 lg:pb-0">
         <SiteHeader onDeclare={() => setDeclare(true)} activeSection={section} onSelectSection={goSection} />
         <main>
           {section && sectionMeta ? (
@@ -79,6 +80,7 @@ const Index = () => {
         <SiteFooter />
       </div>
 
+      <MobileBottomNav activeSection={section} onSelectSection={goSection} />
       <MatchProtocolDialog match={protocol} onOpenChange={(o) => !o && setProtocol(null)} />
       <DeclareTeamDialog open={declare} onOpenChange={setDeclare} />
     </div>
