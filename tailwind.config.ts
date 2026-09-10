@@ -18,12 +18,7 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				head: ['Onest', 'system-ui', 'sans-serif'],
-				body: ['"Golos Text"', 'system-ui', 'sans-serif'],
-			},
 			colors: {
-				win: 'hsl(var(--win))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -89,36 +84,11 @@ export default {
 					to: {
 						height: '0'
 					}
-				},
-				'rise': {
-					from: { opacity: '0', transform: 'translateY(14px)' },
-					to: { opacity: '1', transform: 'none' }
-				},
-				'fade-in': {
-					from: { opacity: '0', transform: 'translateY(10px)' },
-					to: { opacity: '1', transform: 'none' }
-				},
-				'scale-in': {
-					from: { opacity: '0', transform: 'scale(0.96)' },
-					to: { opacity: '1', transform: 'scale(1)' }
-				},
-				'slide-in-right': {
-					from: { transform: 'translateX(100%)' },
-					to: { transform: 'translateX(0)' }
-				},
-				'float': {
-					'0%, 100%': { transform: 'translateX(-50%) translateY(0)' },
-					'50%': { transform: 'translateX(-50%) translateY(-12px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'rise': 'rise 900ms cubic-bezier(.2,.7,.2,1) both',
-				'fade-in': 'fade-in 0.4s ease-out both',
-				'scale-in': 'scale-in 0.25s ease-out both',
-				'slide-in-right': 'slide-in-right 0.3s ease-out both',
-				'float': 'float 7s ease-in-out infinite'
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			}
 		}
 	},
