@@ -98,6 +98,16 @@ export interface ApiOverallRow {
   by_group: Record<string, number>;
 }
 
+export interface NewsItem {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  image_url: string;
+  published_at: string;
+}
+
 export interface LeagueData {
   matches: ApiMatch[];
   standings: Record<string, ApiRow[]>;
@@ -105,6 +115,7 @@ export interface LeagueData {
   players: ApiPlayer[];
   squad: SquadPlayer[];
   teams: ApiTeam[];
+  news: NewsItem[];
 }
 
 export const saveTeam = async (
@@ -366,6 +377,31 @@ export const fetchLeague = async (): Promise<LeagueData> => {
   const res = await fetch(LEAGUE_API);
   if (!res.ok) throw new Error('Не удалось загрузить данные');
   return res.json();
+};
+
+export const saveNews = async (
+  token: string,
+  payload: { id?: number; title: string; slug: string; excerpt?: string; content?: string; image_url?: string; published_at?: string },
+): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=save_news`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось сохранить новость');
+  return data;
+};
+
+export const removeNews = async (token: string, id: number): Promise<LeagueData> => {
+  const res = await fetch(`${LEAGUE_API}?action=remove_news`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось удалить новость');
+  return data;
 };
 
 export const adminLogin = async (password: string): Promise<string> => {

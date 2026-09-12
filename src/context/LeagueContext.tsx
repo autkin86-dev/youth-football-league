@@ -10,6 +10,7 @@ import {
   type LeagueData,
   type SquadPlayer,
   type ApiTeam,
+  type NewsItem,
 } from '@/lib/league-api';
 
 interface LeagueState {
@@ -23,6 +24,7 @@ interface LeagueState {
   players: Player[];
   squad: SquadPlayer[];
   teams: ApiTeam[];
+  news: NewsItem[];
   nextMatch: Match | null;
   lastRound: number;
   applyData: (data: LeagueData) => void;
@@ -65,6 +67,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
         players: [],
         squad: [],
         teams: [],
+        news: [],
         nextMatch: null,
         lastRound: 0,
         applyData: setData,
@@ -105,6 +108,7 @@ export const LeagueProvider = ({ children }: { children: React.ReactNode }) => {
       players: toPlayers(data.players, data.matches),
       squad: data.squad ?? [],
       teams: data.teams ?? [],
+      news: data.news ?? [],
       nextMatch: upcoming[0] ?? schedule[0] ?? null,
       lastRound: results[0]?.round ?? 0,
       applyData: setData,

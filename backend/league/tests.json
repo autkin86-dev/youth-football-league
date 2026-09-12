@@ -60,6 +60,13 @@
       "path": "/?action=reschedule_status",
       "body": {"id": 1, "status": "approved"},
       "expectedStatus": 403
+    },
+    {
+      "name": "Создание новости без прав админа",
+      "method": "POST",
+      "path": "/?action=save_news",
+      "body": {"title": "Тест", "slug": "test"},
+      "expectedStatus": 403
     }
   ]
 }

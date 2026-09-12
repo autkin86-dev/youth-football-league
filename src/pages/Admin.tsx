@@ -7,6 +7,7 @@ import NewMatchForm from '@/components/admin/NewMatchForm';
 import ApplicationsList from '@/components/admin/ApplicationsList';
 import SquadEditor from '@/components/admin/SquadEditor';
 import TeamsEditor from '@/components/admin/TeamsEditor';
+import NewsEditor from '@/components/admin/NewsEditor';
 import CoachAccounts from '@/components/admin/CoachAccounts';
 import ReschedulesList from '@/components/admin/ReschedulesList';
 import { useLeague } from '@/context/LeagueContext';
@@ -234,6 +235,8 @@ const Admin = () => {
             </div>
 
             <TeamsEditor token={token} />
+
+            <NewsEditor token={token} />
 
             <SquadEditor token={token} />
 

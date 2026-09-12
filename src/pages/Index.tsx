@@ -7,6 +7,7 @@ import MatchStatusCard from '@/components/MatchStatusCard';
 import StatsBar from '@/components/StatsBar';
 import StandingsPreview from '@/components/StandingsPreview';
 import AgeGroupCards from '@/components/AgeGroupCards';
+import NewsSection from '@/components/NewsSection';
 import AboutSection from '@/components/AboutSection';
 import OverallStandingsSection from '@/components/OverallStandingsSection';
 import StandingsSection from '@/components/StandingsSection';
@@ -38,6 +39,8 @@ const Index = () => {
 
   const renderSection = () => {
     switch (section) {
+      case 'novosti':
+        return <NewsSection />;
       case 'obshiy-zachet':
         return <OverallStandingsSection />;
       case 'tablo':
@@ -102,6 +105,7 @@ const Index = () => {
                 <StatsBar />
               </div>
               <AgeGroupCards />
+              <NewsSection />
               <div className="hidden lg:block">
                 <AboutSection />
                 <OverallStandingsSection />

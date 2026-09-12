@@ -185,6 +185,9 @@ def load_all(cur):
     cur.execute('SELECT * FROM teams WHERE active = TRUE ORDER BY age_group, name')
     teams = [dict(r) for r in cur.fetchall()]
 
+    cur.execute('SELECT * FROM news WHERE active = TRUE ORDER BY published_at DESC, id DESC')
+    news = [dict(r) for r in cur.fetchall()]
+
     overall_groups = ['2011-2012', '2013-2014', '2015-2016', '2017-2018']
     overall_acc = {}
     for grp in overall_groups:
@@ -216,6 +219,7 @@ def load_all(cur):
         'teams': teams,
         'squad': squad,
         'players': sorted(players.values(), key=lambda p: (-p['goals'], -p['assists'], p['name'])),
+        'news': news,
     }
 
 
@@ -604,6 +608,42 @@ def handler(event: dict, context) -> dict:
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, 'id': mid, **data}, ensure_ascii=False, default=str)}
+
+    if action == 'save_news':
+        nid = body.get('id')
+        title = str(body.get('title', '')).strip()
+        slug = str(body.get('slug', '')).strip()
+        if len(title) < 3 or len(slug) < 3:
+            cur.close()
+            c.close()
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите заголовок и адрес новости'}, ensure_ascii=False)}
+        fields = (
+            f"title='{esc(title)}', slug='{esc(slug)}', excerpt='{esc(body.get('excerpt', ''))}', "
+            f"content='{esc(body.get('content', ''))}', image_url='{esc(body.get('image_url', ''))}'"
+        )
+        if body.get('published_at'):
+            fields += f", published_at='{esc(body['published_at'])}'"
+        if nid:
+            cur.execute(f'UPDATE news SET {fields} WHERE id={int(nid)}')
+        else:
+            cur.execute(
+                "INSERT INTO news (title, slug, excerpt, content, image_url) VALUES "
+                f"('{esc(title)}', '{esc(slug)}', '{esc(body.get('excerpt', ''))}', "
+                f"'{esc(body.get('content', ''))}', '{esc(body.get('image_url', ''))}') RETURNING id"
+            )
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
+
+    if action == 'remove_news':
+        cur.execute(f"UPDATE news SET active = FALSE WHERE id={int(body.get('id'))}")
+        c.commit()
+        data = load_all(cur)
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, **data}, ensure_ascii=False, default=str)}
 
     cur.close()
     c.close()
