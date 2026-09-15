@@ -1,0 +1,1 @@
+UPDATE coach_accounts SET password_hash = '97583fe21062f3d8b138318b3c95b0abef577d2001ab13018bc273b1cfcf14a4' WHERE login = 'azbuka-sporta';
