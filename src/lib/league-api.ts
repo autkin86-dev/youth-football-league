@@ -210,6 +210,41 @@ export const removeCoach = async (token: string, id: number): Promise<CoachAccou
   return data.coaches as CoachAccount[];
 };
 
+export interface CreatedCoach {
+  id: number;
+  team: string;
+  age_group: string;
+  login: string;
+  password: string;
+}
+
+export const bulkCreateCoaches = async (
+  token: string,
+): Promise<{ coaches: CoachAccount[]; created: CreatedCoach[] }> => {
+  const res = await fetch(`${LEAGUE_API}?action=bulk_create_coaches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({}),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось создать доступы');
+  return data as { coaches: CoachAccount[]; created: CreatedCoach[] };
+};
+
+export const resetCoachPassword = async (
+  token: string,
+  id: number,
+): Promise<{ id: number; login: string; password: string }> => {
+  const res = await fetch(`${LEAGUE_API}?action=reset_coach_password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+    body: JSON.stringify({ id }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Не удалось сбросить пароль');
+  return data as { id: number; login: string; password: string };
+};
+
 export const savePlayer = async (
   token: string,
   payload: { id?: number; team: string; age_group?: string; name: string; number: number; position: string },

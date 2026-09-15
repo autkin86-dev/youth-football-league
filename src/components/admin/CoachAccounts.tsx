@@ -5,7 +5,16 @@ import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { AGE_GROUPS, type AgeGroup } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
-import { fetchCoaches, removeCoach, saveCoach, type CoachAccount } from '@/lib/league-api';
+import {
+  fetchCoaches,
+  removeCoach,
+  saveCoach,
+  bulkCreateCoaches,
+  resetCoachPassword,
+  type CoachAccount,
+  type CreatedCoach,
+} from '@/lib/league-api';
+import { downloadCoachCredsDoc } from '@/lib/coach-doc';
 
 interface Props {
   token: string;
@@ -31,6 +40,9 @@ const CoachAccounts = ({ token }: Props) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<number | null>(null);
+  const [pending, setPending] = useState<CreatedCoach[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [resettingId, setResettingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchCoaches(token)
@@ -38,6 +50,41 @@ const CoachAccounts = ({ token }: Props) => {
       .catch((e) => setError(e instanceof Error ? e.message : 'Ошибка загрузки'))
       .finally(() => setLoading(false));
   }, [token]);
+
+  const teamsWithoutAccess = useMemo(() => {
+    const has = new Set(items.map((c) => `${c.team}|${c.age_group}`));
+    return apiTeams.filter((t) => !has.has(`${t.name}|${t.age_group}`));
+  }, [apiTeams, items]);
+
+  const createAll = async () => {
+    setError('');
+    setBulkBusy(true);
+    try {
+      const { coaches, created } = await bulkCreateCoaches(token);
+      setItems(coaches);
+      setPending((prev) => [...prev, ...created]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось создать доступы');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const resetPassword = async (c: CoachAccount) => {
+    setError('');
+    setResettingId(c.id);
+    try {
+      const { login: l, password: p } = await resetCoachPassword(token, c.id);
+      setPending((prev) => [
+        ...prev.filter((x) => x.id !== c.id),
+        { id: c.id, team: c.team, age_group: c.age_group, login: l, password: p },
+      ]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сбросить пароль');
+    } finally {
+      setResettingId(null);
+    }
+  };
 
   useEffect(() => {
     if (groupsWithTeams.length && !ageGroup) setAgeGroup(groupsWithTeams[0].id);
@@ -128,18 +175,74 @@ const CoachAccounts = ({ token }: Props) => {
           </p>
         </div>
         {!open && (
-          <button
-            onClick={() => {
-              reset();
-              setOpen(true);
-            }}
-            className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-[0.85rem] font-semibold text-accent-foreground transition-transform hover:scale-[1.03]"
-          >
-            <Icon name="Plus" size={14} />
-            Новый доступ
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {teamsWithoutAccess.length > 0 && (
+              <button
+                onClick={createAll}
+                disabled={bulkBusy}
+                className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[0.85rem] font-semibold text-primary-foreground transition-transform hover:scale-[1.03] disabled:opacity-50"
+              >
+                <Icon name="KeyRound" size={14} />
+                {bulkBusy ? 'Создаю…' : `Создать доступы (${teamsWithoutAccess.length})`}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                reset();
+                setOpen(true);
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-[0.85rem] font-semibold text-accent-foreground transition-transform hover:scale-[1.03]"
+            >
+              <Icon name="Plus" size={14} />
+              Новый доступ
+            </button>
+          </div>
         )}
       </div>
+
+      {pending.length > 0 && (
+        <div className="mb-4 rounded-[var(--radius)] bg-card p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="eyebrow">Новые пароли — сохраните сейчас</p>
+              <p className="mt-1 text-[0.83rem] text-muted-foreground">
+                Пароли показываются один раз. Скачайте документ или скопируйте, прежде чем закрыть список.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => downloadCoachCredsDoc(pending)}
+                className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-[0.82rem] font-semibold text-accent-foreground transition-transform hover:scale-[1.03]"
+              >
+                <Icon name="FileDown" size={14} />
+                Скачать документ
+              </button>
+              <button
+                onClick={() => setPending([])}
+                className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:text-foreground"
+                aria-label="Скрыть"
+              >
+                <Icon name="X" size={16} />
+              </button>
+            </div>
+          </div>
+
+          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-[var(--radius)] bg-secondary/40">
+            {pending.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-[0.85rem]">
+                <span className="min-w-[140px] font-semibold">{p.team}</span>
+                <span className="text-muted-foreground">{groupLabel(p.age_group)}</span>
+                <span className="tabnum ml-auto">
+                  логин: <b>{p.login}</b>
+                </span>
+                <span className="tabnum">
+                  пароль: <b>{p.password}</b>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {open && (
         <div className="mb-4 rounded-[var(--radius)] bg-card p-5">
@@ -262,6 +365,14 @@ const CoachAccounts = ({ token }: Props) => {
               >
                 <Icon name={copied === c.id ? 'Check' : 'Link'} size={14} />
                 {copied === c.id ? 'Скопировано' : 'Ссылка на вход'}
+              </button>
+              <button
+                onClick={() => resetPassword(c)}
+                disabled={resettingId === c.id}
+                className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-[0.82rem] font-semibold transition-colors hover:bg-secondary/70 disabled:opacity-50"
+              >
+                <Icon name="KeyRound" size={14} />
+                {resettingId === c.id ? 'Сбрасываю…' : 'Новый пароль'}
               </button>
               <button
                 onClick={() => startEdit(c)}

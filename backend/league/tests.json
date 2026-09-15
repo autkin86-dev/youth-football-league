@@ -67,6 +67,20 @@
       "path": "/?action=save_news",
       "body": {"title": "Тест", "slug": "test"},
       "expectedStatus": 403
+    },
+    {
+      "name": "Массовое создание доступов тренеров без прав админа",
+      "method": "POST",
+      "path": "/?action=bulk_create_coaches",
+      "body": {},
+      "expectedStatus": 403
+    },
+    {
+      "name": "Сброс пароля тренера без прав админа",
+      "method": "POST",
+      "path": "/?action=reset_coach_password",
+      "body": {"id": 1},
+      "expectedStatus": 403
     }
   ]
 }

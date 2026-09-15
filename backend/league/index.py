@@ -1,8 +1,28 @@
 import json
 import os
+import re
+import random
 import hashlib
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+RU_TRANSLIT = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e', 'ж': 'zh', 'з': 'z', 'и': 'i',
+    'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+    'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'c', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '',
+    'э': 'e', 'ю': 'yu', 'я': 'ya',
+}
+
+
+def slugify_ru(text: str) -> str:
+    s = ''.join(RU_TRANSLIT.get(ch, ch) for ch in text.lower())
+    s = re.sub(r'[^a-z0-9]+', '-', s)
+    return s.strip('-')
+
+
+def gen_password(n: int = 6) -> str:
+    pool = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    return ''.join(random.choice(pool) for _ in range(n))
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -470,6 +490,63 @@ def handler(event: dict, context) -> dict:
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'coaches': rows}, ensure_ascii=False, default=str)}
+
+    if action == 'bulk_create_coaches':
+        cur.execute('SELECT name, age_group FROM teams WHERE active = TRUE ORDER BY age_group, name')
+        teams = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT team, age_group FROM coach_accounts WHERE active = TRUE")
+        existing = {(r['team'], r['age_group']) for r in cur.fetchall()}
+        used_logins = set()
+        cur.execute("SELECT login FROM coach_accounts WHERE active = TRUE")
+        for r in cur.fetchall():
+            used_logins.add(r['login'])
+
+        created = []
+        for t in teams:
+            if (t['name'], t['age_group']) in existing:
+                continue
+            base_login = slugify_ru(t['name']) or 'team'
+            year_suffix = t['age_group'].split('-')[0][-2:]
+            login = f"{base_login}-{year_suffix}"
+            n = 1
+            while login in used_logins:
+                n += 1
+                login = f"{base_login}-{year_suffix}-{n}"
+            used_logins.add(login)
+            password = gen_password()
+            cur.execute(
+                "INSERT INTO coach_accounts (login, team, age_group, coach_name, password_hash) VALUES "
+                f"('{esc(login)}', '{esc(t['name'])}', '{esc(t['age_group'])}', '', '{esc(coach_token(login, password))}') RETURNING id"
+            )
+            new_id = cur.fetchone()['id']
+            created.append({
+                'id': new_id, 'team': t['name'], 'age_group': t['age_group'],
+                'login': login, 'password': password,
+            })
+        c.commit()
+        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps(
+            {'coaches': rows, 'created': created}, ensure_ascii=False, default=str
+        )}
+
+    if action == 'reset_coach_password':
+        cid = int(body.get('id'))
+        cur.execute(f"SELECT login FROM coach_accounts WHERE id={cid} AND active = TRUE")
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            c.close()
+            return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Доступ не найден'}, ensure_ascii=False)}
+        login = row['login']
+        password = gen_password()
+        cur.execute(f"UPDATE coach_accounts SET password_hash='{esc(coach_token(login, password))}' WHERE id={cid}")
+        c.commit()
+        cur.close()
+        c.close()
+        return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'id': cid, 'login': login, 'password': password}, ensure_ascii=False)}
 
     if action == 'application_status':
         status = str(body.get('status', 'new'))
