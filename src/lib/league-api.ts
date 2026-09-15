@@ -147,14 +147,14 @@ export interface CoachAccount {
   id: number;
   login: string;
   team: string;
-  age_group: string;
+  age_groups: string[];
   coach_name: string;
 }
 
 export interface CoachSession {
   token: string;
   team: string;
-  age_group: string;
+  age_groups: string[];
   coach_name: string;
 }
 
@@ -184,7 +184,7 @@ export const saveCoach = async (
     id?: number;
     login: string;
     team: string;
-    age_group: string;
+    age_groups: string[];
     coach_name?: string;
     password?: string;
   },
@@ -213,7 +213,7 @@ export const removeCoach = async (token: string, id: number): Promise<CoachAccou
 export interface CreatedCoach {
   id: number;
   team: string;
-  age_group: string;
+  age_groups: string[];
   login: string;
   password: string;
 }

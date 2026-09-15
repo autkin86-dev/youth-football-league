@@ -260,7 +260,7 @@ def handler(event: dict, context) -> dict:
                 cur.close()
                 c.close()
                 return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход в админку'}, ensure_ascii=False)}
-            cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+            cur.execute('SELECT id, login, team, age_groups, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
             coaches = [dict(r) for r in cur.fetchall()]
             cur.execute('SELECT * FROM team_applications ORDER BY created_at DESC')
             rows = [dict(r) for r in cur.fetchall()]
@@ -330,7 +330,7 @@ def handler(event: dict, context) -> dict:
             return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Неверный логин или пароль'}, ensure_ascii=False)}
         acc = dict(row)
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({
-            'token': acc['password_hash'], 'team': acc['team'], 'age_group': acc['age_group'],
+            'token': acc['password_hash'], 'team': acc['team'], 'age_groups': acc['age_groups'] or [],
             'coach_name': acc['coach_name'],
         }, ensure_ascii=False)}
 
@@ -344,10 +344,12 @@ def handler(event: dict, context) -> dict:
             c.close()
             return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нужен вход'}, ensure_ascii=False)}
 
+        coach_groups = acc.get('age_groups') or []
+
         if action == 'remove_player':
             cur.execute(f"SELECT team, age_group FROM squad_players WHERE id={int(body.get('id'))}")
             target = cur.fetchone()
-            if not target or target['team'] != acc['team'] or target['age_group'] != acc['age_group']:
+            if not target or target['team'] != acc['team'] or target['age_group'] not in coach_groups:
                 cur.close()
                 c.close()
                 return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
@@ -362,7 +364,7 @@ def handler(event: dict, context) -> dict:
             if pid:
                 cur.execute(f"SELECT team, age_group FROM squad_players WHERE id={int(pid)}")
                 target = cur.fetchone()
-                if not target or target['team'] != acc['team'] or target['age_group'] != acc['age_group']:
+                if not target or target['team'] != acc['team'] or target['age_group'] not in coach_groups:
                     cur.close()
                     c.close()
                     return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Можно менять только свою команду'}, ensure_ascii=False)}
@@ -371,9 +373,14 @@ def handler(event: dict, context) -> dict:
                     f"position='{esc(body.get('position', 'Полузащитник'))}' WHERE id={int(pid)}"
                 )
             else:
+                req_group = str(body.get('age_group', '')).strip()
+                if req_group not in coach_groups:
+                    cur.close()
+                    c.close()
+                    return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нет доступа к этой возрастной группе'}, ensure_ascii=False)}
                 cur.execute(
                     "INSERT INTO squad_players (team, age_group, name, number, position) VALUES "
-                    f"('{esc(acc['team'])}', '{esc(acc['age_group'])}', '{esc(name)}', "
+                    f"('{esc(acc['team'])}', '{esc(req_group)}', '{esc(name)}', "
                     f"{int(body.get('number') or 0)}, '{esc(body.get('position', 'Полузащитник'))}')"
                 )
         c.commit()
@@ -452,15 +459,16 @@ def handler(event: dict, context) -> dict:
         login = str(body.get('login', '')).strip().lower()
         pwd = str(body.get('password', ''))
         team = str(body.get('team', '')).strip()
-        age_group = str(body.get('age_group', '')).strip()
-        if len(login) < 3 or len(team) < 2 or not age_group:
+        age_groups = [str(g).strip() for g in (body.get('age_groups') or []) if str(g).strip()]
+        if len(login) < 3 or len(team) < 2 or not age_groups:
             cur.close()
             c.close()
-            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите логин, команду и возрастную группу'}, ensure_ascii=False)}
+            return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Укажите логин, команду и хотя бы одну возрастную группу'}, ensure_ascii=False)}
+        groups_sql = '{' + ','.join(esc(g) for g in age_groups) + '}'
         cid = body.get('id')
         if cid:
             sets = (
-                f"login='{esc(login)}', team='{esc(team)}', age_group='{esc(age_group)}', "
+                f"login='{esc(login)}', team='{esc(team)}', age_groups='{groups_sql}', "
                 f"coach_name='{esc(body.get('coach_name', ''))}'"
             )
             if pwd:
@@ -472,11 +480,11 @@ def handler(event: dict, context) -> dict:
                 c.close()
                 return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Пароль минимум 4 символа'}, ensure_ascii=False)}
             cur.execute(
-                "INSERT INTO coach_accounts (login, team, age_group, coach_name, password_hash) VALUES "
-                f"('{esc(login)}', '{esc(team)}', '{esc(age_group)}', '{esc(body.get('coach_name', ''))}', '{esc(coach_token(login, pwd))}')"
+                "INSERT INTO coach_accounts (login, team, age_groups, coach_name, password_hash) VALUES "
+                f"('{esc(login)}', '{esc(team)}', '{groups_sql}', '{esc(body.get('coach_name', ''))}', '{esc(coach_token(login, pwd))}')"
             )
         c.commit()
-        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        cur.execute('SELECT id, login, team, age_groups, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         c.close()
@@ -485,46 +493,55 @@ def handler(event: dict, context) -> dict:
     if action == 'remove_coach':
         cur.execute(f"UPDATE coach_accounts SET active = FALSE WHERE id={int(body.get('id'))}")
         c.commit()
-        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        cur.execute('SELECT id, login, team, age_groups, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         c.close()
         return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'coaches': rows}, ensure_ascii=False, default=str)}
 
     if action == 'bulk_create_coaches':
-        cur.execute('SELECT name, age_group FROM teams WHERE active = TRUE ORDER BY age_group, name')
+        cur.execute('SELECT name, age_group FROM teams WHERE active = TRUE ORDER BY name, age_group')
         teams = [dict(r) for r in cur.fetchall()]
-        cur.execute("SELECT team, age_group FROM coach_accounts WHERE active = TRUE")
-        existing = {(r['team'], r['age_group']) for r in cur.fetchall()}
-        used_logins = set()
-        cur.execute("SELECT login FROM coach_accounts WHERE active = TRUE")
-        for r in cur.fetchall():
-            used_logins.add(r['login'])
+        by_team = {}
+        for t in teams:
+            by_team.setdefault(t['name'], []).append(t['age_group'])
+
+        cur.execute("SELECT id, login, team, age_groups FROM coach_accounts WHERE active = TRUE")
+        existing_accounts = {r['team']: dict(r) for r in cur.fetchall()}
+        used_logins = {r['login'] for r in existing_accounts.values()}
 
         created = []
-        for t in teams:
-            if (t['name'], t['age_group']) in existing:
+        for team_name, groups in by_team.items():
+            acc_row = existing_accounts.get(team_name)
+            if acc_row:
+                have = set(acc_row['age_groups'] or [])
+                missing = [g for g in groups if g not in have]
+                if not missing:
+                    continue
+                merged = list(have) + missing
+                groups_sql = '{' + ','.join(esc(g) for g in merged) + '}'
+                cur.execute(f"UPDATE coach_accounts SET age_groups='{groups_sql}' WHERE id={acc_row['id']}")
                 continue
-            base_login = slugify_ru(t['name']) or 'team'
-            year_suffix = t['age_group'].split('-')[0][-2:]
-            login = f"{base_login}-{year_suffix}"
+            base_login = slugify_ru(team_name) or 'team'
+            login = base_login
             n = 1
             while login in used_logins:
                 n += 1
-                login = f"{base_login}-{year_suffix}-{n}"
+                login = f"{base_login}-{n}"
             used_logins.add(login)
             password = gen_password()
+            groups_sql = '{' + ','.join(esc(g) for g in groups) + '}'
             cur.execute(
-                "INSERT INTO coach_accounts (login, team, age_group, coach_name, password_hash) VALUES "
-                f"('{esc(login)}', '{esc(t['name'])}', '{esc(t['age_group'])}', '', '{esc(coach_token(login, password))}') RETURNING id"
+                "INSERT INTO coach_accounts (login, team, age_groups, coach_name, password_hash) VALUES "
+                f"('{esc(login)}', '{esc(team_name)}', '{groups_sql}', '', '{esc(coach_token(login, password))}') RETURNING id"
             )
             new_id = cur.fetchone()['id']
             created.append({
-                'id': new_id, 'team': t['name'], 'age_group': t['age_group'],
+                'id': new_id, 'team': team_name, 'age_groups': groups,
                 'login': login, 'password': password,
             })
         c.commit()
-        cur.execute('SELECT id, login, team, age_group, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
+        cur.execute('SELECT id, login, team, age_groups, coach_name FROM coach_accounts WHERE active = TRUE ORDER BY team')
         rows = [dict(r) for r in cur.fetchall()]
         cur.close()
         c.close()

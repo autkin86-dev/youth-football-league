@@ -1,0 +1,1 @@
+ALTER TABLE coach_accounts ADD CONSTRAINT coach_accounts_team_key UNIQUE (team);

@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { AGE_GROUPS, type AgeGroup } from '@/data/league';
+import { AGE_GROUPS } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import {
   fetchCoaches,
@@ -23,18 +23,28 @@ interface Props {
 const CoachAccounts = ({ token }: Props) => {
   const { teams: apiTeams } = useLeague();
 
-  const groupsWithTeams = useMemo(
-    () => AGE_GROUPS.filter((g) => apiTeams.some((t) => t.age_group === g.id)),
+  const teamNames = useMemo(
+    () => Array.from(new Set(apiTeams.map((t) => t.name))).sort((a, b) => a.localeCompare(b)),
     [apiTeams],
   );
+
+  const groupsByTeam = useMemo(() => {
+    const map = new Map<string, string[]>();
+    apiTeams.forEach((t) => {
+      const list = map.get(t.name) ?? [];
+      if (!list.includes(t.age_group)) list.push(t.age_group);
+      map.set(t.name, list);
+    });
+    return map;
+  }, [apiTeams]);
 
   const [items, setItems] = useState<CoachAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CoachAccount | null>(null);
   const [login, setLogin] = useState('');
-  const [ageGroup, setAgeGroup] = useState<AgeGroup | ''>('');
   const [team, setTeam] = useState('');
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
   const [coachName, setCoachName] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -52,9 +62,9 @@ const CoachAccounts = ({ token }: Props) => {
   }, [token]);
 
   const teamsWithoutAccess = useMemo(() => {
-    const has = new Set(items.map((c) => `${c.team}|${c.age_group}`));
-    return apiTeams.filter((t) => !has.has(`${t.name}|${t.age_group}`));
-  }, [apiTeams, items]);
+    const has = new Set(items.map((c) => c.team));
+    return teamNames.filter((t) => !has.has(t));
+  }, [teamNames, items]);
 
   const createAll = async () => {
     setError('');
@@ -77,7 +87,7 @@ const CoachAccounts = ({ token }: Props) => {
       const { login: l, password: p } = await resetCoachPassword(token, c.id);
       setPending((prev) => [
         ...prev.filter((x) => x.id !== c.id),
-        { id: c.id, team: c.team, age_group: c.age_group, login: l, password: p },
+        { id: c.id, team: c.team, age_groups: c.age_groups, login: l, password: p },
       ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось сбросить пароль');
@@ -87,17 +97,17 @@ const CoachAccounts = ({ token }: Props) => {
   };
 
   useEffect(() => {
-    if (groupsWithTeams.length && !ageGroup) setAgeGroup(groupsWithTeams[0].id);
-  }, [groupsWithTeams, ageGroup]);
-
-  const teamsInGroup = useMemo(
-    () => apiTeams.filter((t) => t.age_group === ageGroup).map((t) => t.name),
-    [apiTeams, ageGroup],
-  );
+    if (teamNames.length && !team) setTeam(teamNames[0]);
+  }, [teamNames, team]);
 
   useEffect(() => {
-    if (teamsInGroup.length && !teamsInGroup.includes(team)) setTeam(teamsInGroup[0]);
-  }, [teamsInGroup, team]);
+    if (editing) return;
+    setAgeGroups(groupsByTeam.get(team) ?? []);
+  }, [team, groupsByTeam, editing]);
+
+  const toggleGroup = (id: string) => {
+    setAgeGroups((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
+  };
 
   const reset = () => {
     setOpen(false);
@@ -105,15 +115,15 @@ const CoachAccounts = ({ token }: Props) => {
     setLogin('');
     setCoachName('');
     setPassword('');
-    setAgeGroup(groupsWithTeams[0]?.id ?? '');
+    setTeam(teamNames[0] ?? '');
     setError('');
   };
 
   const startEdit = (c: CoachAccount) => {
     setEditing(c);
     setLogin(c.login);
-    setAgeGroup(c.age_group as AgeGroup);
     setTeam(c.team);
+    setAgeGroups(c.age_groups);
     setCoachName(c.coach_name);
     setPassword('');
     setOpen(true);
@@ -123,7 +133,8 @@ const CoachAccounts = ({ token }: Props) => {
   const submit = async () => {
     setError('');
     if (login.trim().length < 3) return setError('Логин минимум 3 символа');
-    if (!ageGroup) return setError('Выберите возрастную группу');
+    if (!team) return setError('Выберите команду');
+    if (!ageGroups.length) return setError('Выберите хотя бы одну возрастную группу');
     if (!editing && password.length < 4) return setError('Пароль минимум 4 символа');
     setBusy(true);
     try {
@@ -132,7 +143,7 @@ const CoachAccounts = ({ token }: Props) => {
           id: editing?.id,
           login: login.trim().toLowerCase(),
           team,
-          age_group: ageGroup,
+          age_groups: ageGroups,
           coach_name: coachName.trim(),
           password: password || undefined,
         }),
@@ -171,7 +182,7 @@ const CoachAccounts = ({ token }: Props) => {
         <div>
           <h2 className="font-head text-[1.5rem] font-bold tracking-[-0.03em]">Доступы тренеров</h2>
           <p className="mt-1 text-[0.83rem] text-muted-foreground">
-            Тренер входит на /coach и правит только состав своей команды.
+            Один тренер — один клуб, доступ сразу ко всем его возрастным группам. Вход на /coach.
           </p>
         </div>
         {!open && (
@@ -231,7 +242,9 @@ const CoachAccounts = ({ token }: Props) => {
             {pending.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-[0.85rem]">
                 <span className="min-w-[140px] font-semibold">{p.team}</span>
-                <span className="text-muted-foreground">{groupLabel(p.age_group)}</span>
+                <span className="text-muted-foreground">
+                  {p.age_groups.map(groupLabel).join(', ')}
+                </span>
                 <span className="tabnum ml-auto">
                   логин: <b>{p.login}</b>
                 </span>
@@ -289,27 +302,9 @@ const CoachAccounts = ({ token }: Props) => {
             </div>
           </div>
 
-          <label className="eyebrow mb-2 mt-4 block">Возрастная группа</label>
-          <div className="flex flex-wrap gap-1.5">
-            {groupsWithTeams.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setAgeGroup(g.id)}
-                className={cn(
-                  'rounded-full px-3 py-1.5 text-[0.78rem] font-medium transition-colors',
-                  ageGroup === g.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {g.short}
-              </button>
-            ))}
-          </div>
-
           <label className="eyebrow mb-2 mt-4 block">Команда</label>
           <div className="flex flex-wrap gap-1.5">
-            {teamsInGroup.map((t) => (
+            {teamNames.map((t) => (
               <button
                 key={t}
                 onClick={() => setTeam(t)}
@@ -323,6 +318,27 @@ const CoachAccounts = ({ token }: Props) => {
                 {t}
               </button>
             ))}
+          </div>
+
+          <label className="eyebrow mb-2 mt-4 block">Возрастные группы клуба</label>
+          <div className="flex flex-wrap gap-1.5">
+            {(groupsByTeam.get(team) ?? []).map((id) => (
+              <button
+                key={id}
+                onClick={() => toggleGroup(id)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-[0.78rem] font-medium transition-colors',
+                  ageGroups.includes(id)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {groupLabel(id)}
+              </button>
+            ))}
+            {!(groupsByTeam.get(team) ?? []).length && (
+              <p className="text-[0.8rem] text-muted-foreground">У этой команды пока нет возрастных групп</p>
+            )}
           </div>
 
           {error && <p className="mt-3 text-[0.82rem] text-accent">{error}</p>}
@@ -344,9 +360,14 @@ const CoachAccounts = ({ token }: Props) => {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-head text-[1.02rem] font-bold">{c.team}</span>
-                <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground">
-                  {groupLabel(c.age_group)}
-                </span>
+                {c.age_groups.map((g) => (
+                  <span
+                    key={g}
+                    className="rounded-full bg-secondary px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground"
+                  >
+                    {groupLabel(g)}
+                  </span>
+                ))}
                 <span className="rounded-full bg-secondary px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground">
                   логин: {c.login}
                 </span>

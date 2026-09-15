@@ -1,0 +1,1 @@
+ALTER TABLE coach_accounts ADD COLUMN IF NOT EXISTS age_groups text[] NOT NULL DEFAULT '{}';

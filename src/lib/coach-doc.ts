@@ -2,7 +2,7 @@ import { AGE_GROUPS } from '@/data/league';
 
 interface CoachCred {
   team: string;
-  age_group: string;
+  age_groups: string[];
   login: string;
   password: string;
 }
@@ -39,11 +39,11 @@ ${body}
 </html>`;
 
 export const buildCoachCredsDoc = (creds: CoachCred[]) => {
-  const sorted = [...creds].sort((a, b) => a.age_group.localeCompare(b.age_group) || a.team.localeCompare(b.team));
+  const sorted = [...creds].sort((a, b) => a.team.localeCompare(b.team));
   const rows = sorted
     .map(
       (c) =>
-        `<tr><td>${esc(c.team)}</td><td>${esc(groupLabel(c.age_group))}</td><td>${esc(c.login)}</td><td>${esc(c.password)}</td></tr>`,
+        `<tr><td>${esc(c.team)}</td><td>${esc(c.age_groups.map(groupLabel).join(', '))}</td><td>${esc(c.login)}</td><td>${esc(c.password)}</td></tr>`,
     )
     .join('');
 

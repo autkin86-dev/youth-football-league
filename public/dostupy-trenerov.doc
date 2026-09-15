@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="utf-8">
+<title>Доступы тренеров</title>
+<style>
+  @page { size: A4; margin: 1.6cm 1.4cm; }
+  body { font-family: "Times New Roman", serif; font-size: 11pt; color: #000; }
+  .title { font-size: 15pt; font-weight: bold; text-align: center; margin: 0 0 2pt; }
+  .sub { text-align: center; font-size: 10pt; margin: 0 0 14pt; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8pt; }
+  table.grid th, table.grid td { border: 1px solid #000; padding: 5pt 7pt; font-size: 11pt; }
+  table.grid th { background: #eee; font-size: 10pt; text-transform: uppercase; }
+  .note { font-size: 9.5pt; color: #444; margin-top: 10pt; }
+</style>
+</head>
+<body>
+<p class="title">ДОСТУПЫ ТРЕНЕРОВ В ЛИЧНЫЙ КАБИНЕТ</p>
+<p class="sub">Первенство САО по футболу · страница входа: /coach</p>
+<table class="grid">
+  <tr>
+    <th style="width:30%">Команда</th>
+    <th style="width:30%">Возрастные группы</th>
+    <th style="width:20%">Логин</th>
+    <th style="width:20%">Пароль</th>
+  </tr>
+  <tr><td>Азбука спорта</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>azbuka-sporta</td><td>xH9cyX</td></tr>
+<tr><td>Буря</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>burya</td><td>kAPJ2j</td></tr>
+<tr><td>Взлет</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>vzlet</td><td>u5qnH8</td></tr>
+<tr><td>Время первых</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>vremya-pervyh</td><td>za2yUt</td></tr>
+<tr><td>Гермес</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>germes</td><td>8xAXAy</td></tr>
+<tr><td>Олимп</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>olimp</td><td>wPjs94</td></tr>
+<tr><td>Пантеры</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>pantery</td><td>59PB3m</td></tr>
+<tr><td>Пилот</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>pilot</td><td>SRpN7B</td></tr>
+<tr><td>Родина</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>rodina</td><td>eTE7Ac</td></tr>
+<tr><td>САО</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>sao</td><td>75MsGu</td></tr>
+<tr><td>Сокол-Сервантинос</td><td>2011–2012, 2013–2014, 2015–2016, 2017–2018</td><td>sokol-servantinos</td><td>hNFJV2</td></tr>
+<tr><td>Стекон</td><td>2011–2012, 2012–2013, 2013–2014, 2015–2016, 2017–2018</td><td>stekon</td><td>E7fstP</td></tr>
+
+</table>
+<p class="note">Один тренер — доступ сразу ко всем возрастным группам своего клуба. Рекомендуется передать данные лично и попросить сменить пароль после первого входа.</p>
+</body>
+</html>

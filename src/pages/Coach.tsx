@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
-import { SEASON } from '@/data/league';
+import { AGE_GROUPS, SEASON } from '@/data/league';
 import { useLeague } from '@/context/LeagueContext';
 import {
   coachLogin,
@@ -100,6 +100,7 @@ const Coach = () => {
   useSeo({ title: 'Кабинет тренера', path: '/coach', noindex: true });
   const [session, setSession] = useState<CoachSession | null>(null);
   const { squad, raw, applyData, reload } = useLeague();
+  const [activeGroup, setActiveGroup] = useState('');
 
   const [editing, setEditing] = useState<SquadPlayer | null>(null);
   const [name, setName] = useState('');
@@ -137,17 +138,23 @@ const Coach = () => {
       .finally(() => setReschedLoading(false));
   }, [session]);
 
+  useEffect(() => {
+    if (session && session.age_groups.length && !session.age_groups.includes(activeGroup)) {
+      setActiveGroup(session.age_groups[0]);
+    }
+  }, [session, activeGroup]);
+
   if (!session) return <CoachLogin onSuccess={setSession} />;
 
   const players = squad
-    .filter((p) => p.team === session.team && p.age_group === session.age_group)
+    .filter((p) => p.team === session.team && p.age_group === activeGroup)
     .sort((a, b) => a.number - b.number);
 
   const upcomingMatches = raw
     .filter(
       (m) =>
         !m.played &&
-        m.age_group === session.age_group &&
+        m.age_group === activeGroup &&
         (m.home_team === session.team || m.away_team === session.team),
     )
     .sort((a, b) => a.round - b.round);
@@ -204,6 +211,7 @@ const Coach = () => {
         await savePlayer(session.token, {
           id: editing?.id,
           team: session.team,
+          age_group: activeGroup,
           name: name.trim(),
           number: Number(number) || 0,
           position,
@@ -252,7 +260,7 @@ const Coach = () => {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to={`/team/${teamSlug(session.team, session.age_group)}`}
+              to={`/team/${teamSlug(session.team, activeGroup)}`}
               className="rounded-full bg-secondary px-4 py-2 text-[0.85rem] font-semibold text-muted-foreground hover:text-foreground"
             >
               Страница команды
@@ -266,8 +274,34 @@ const Coach = () => {
           </div>
         </header>
 
+        {session.age_groups.length > 1 && (
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            {session.age_groups.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveGroup(g)}
+                className={cn(
+                  'rounded-full px-3.5 py-1.5 text-[0.82rem] font-semibold transition-colors',
+                  activeGroup === g
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {AGE_GROUPS.find((ag) => ag.id === g)?.short ?? g}
+              </button>
+            ))}
+          </div>
+        )}
+
         <section className="mt-6">
-          <h1 className="font-head text-[1.7rem] font-bold tracking-[-0.03em]">Состав команды</h1>
+          <h1 className="font-head text-[1.7rem] font-bold tracking-[-0.03em]">
+            Состав команды
+            {session.age_groups.length > 1 && (
+              <span className="ml-2 text-muted-foreground">
+                · {AGE_GROUPS.find((ag) => ag.id === activeGroup)?.short ?? activeGroup}
+              </span>
+            )}
+          </h1>
           <p className="mt-2 text-[0.88rem] text-muted-foreground">
             Добавляйте и правьте игроков своей команды. Результаты матчей вносит судейский комитет.
           </p>
